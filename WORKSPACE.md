@@ -120,6 +120,16 @@ nina.fm-website/                       ← Repo Nuxt (son propre git)
 
 ---
 
+## Prérequis Versions
+
+```bash
+# pnpm v10 requis pour tous les repos (packageManager: pnpm@10.12.4)
+corepack enable
+corepack use pnpm@10.12.4   # ou: npm install -g pnpm@10
+```
+
+> ⚠️ La machine de dev doit tourner avec pnpm v10. Les hooks git (husky) et les installs pnpm échoueront silencieusement avec pnpm v9.
+
 ## Installation sur une Nouvelle Machine
 
 ```bash
