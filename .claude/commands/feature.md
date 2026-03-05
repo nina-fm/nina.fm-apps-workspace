@@ -1,0 +1,75 @@
+Analyze the codebase and create a detailed implementation plan for: $ARGUMENTS
+
+## Instructions
+
+You are in **plan mode**. Your goal is to explore the codebase, understand the context, and present a structured implementation plan. Do NOT write any code until the user explicitly approves the plan.
+
+---
+
+### Step 1 — Explore the codebase
+
+Before writing anything:
+- Read `CLAUDE.md` (and parent `CLAUDE.md` files) to understand current conventions
+- Search for files relevant to the feature: existing hooks, services, components, types that may apply
+- Identify patterns to follow (look at similar existing implementations)
+- Check that no existing hook/service already covers part of the need
+
+---
+
+### Step 2 — Create the feature branch
+
+Create a dedicated branch before presenting the plan:
+
+```bash
+SLUG=$(echo "$ARGUMENTS" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | cut -c1-50 | sed 's/-$//')
+git checkout -b feat/$SLUG
+echo "Branch created: feat/$SLUG"
+```
+
+---
+
+### Step 3 — Present the implementation plan
+
+Structure your plan **exactly** as follows:
+
+---
+
+**Feature:** $ARGUMENTS
+**Branch:** `feat/[slug]`
+
+#### Summary
+[2–3 sentences: what will be built, why, and what it changes for the user/developer]
+
+#### Files to create
+| File | Purpose |
+|------|---------|
+| `src/...` | [description] |
+
+#### Files to modify
+| File | Changes |
+|------|---------|
+| `src/...` | [what changes and why] |
+
+#### Tests to write
+| File | Scenarios |
+|------|-----------|
+| `src/....test.ts` | [key test cases] |
+
+#### API impact
+[Changes needed in `nina.fm-api`, or **None** if purely frontend]
+
+#### Open questions
+[Any ambiguity or decision needed from the user — or "None"]
+
+#### Estimated scope
+[ ] Small (< 2h) [ ] Medium (2–4h) [ ] Large (> 4h)
+
+---
+
+### Step 4 — Wait for approval
+
+End your response with exactly this line:
+
+> ✅ Plan ready — should I proceed with implementation?
+
+Do NOT write any code, create any file, or make any change until the user responds with an approval ("go", "yes", "proceed", "ok", or equivalent).
