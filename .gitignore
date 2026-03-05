@@ -1,9 +1,8 @@
 # Nina.fm Workspace — git repo tracking ONLY workspace config
 # Individual project repos are ignored (they have their own git)
-nina.fm-api/
-nina.fm-mixtaper/
-nina.fm-faceb/
-nina.fm-website/
+nina.fm-*/
+archives/
+uploads
 
 # OS
 .DS_Store
