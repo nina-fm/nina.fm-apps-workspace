@@ -12,6 +12,7 @@
   "editor.quickSuggestions": {
     "strings": "on"
   },
+  "git.autorefresh": true,
   "tailwindCSS.classAttributes": ["class", "ui"],
   "tailwindCSS.experimental.classRegex": [
     ["ui:\\s*{([^)]*)\\s*}", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
