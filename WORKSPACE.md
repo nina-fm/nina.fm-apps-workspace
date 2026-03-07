@@ -7,12 +7,12 @@ Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (
 
 ## Écosystème
 
-| Repo | Stack | Rôle | Port local |
-|------|-------|------|-----------|
-| `nina.fm-api` | NestJS 11 + TypeORM + PostgreSQL | API partagée (auth, sessions, fichiers…) | 4000 |
-| `nina.fm-mixtaper` | SolidJS + SolidStart | App de création de mixtapes | 3000 |
-| `nina.fm-faceb` | Nuxt 4 | Backoffice admin | 3001 |
-| `nina.fm-website` | Nuxt 4 | Site public / radio | 3002 |
+| Repo               | Stack                            | Rôle                                     | Port local |
+| ------------------ | -------------------------------- | ---------------------------------------- | ---------- |
+| `nina.fm-api`      | NestJS 11 + TypeORM + PostgreSQL | API partagée (auth, sessions, fichiers…) | 4000       |
+| `nina.fm-mixtaper` | SolidJS + SolidStart             | App de création de mixtapes              | 3000       |
+| `nina.fm-faceb`    | Nuxt 4                           | Backoffice admin                         | 3001       |
+| `nina.fm-website`  | Nuxt 4                           | Site public / radio                      | 3002       |
 
 Toutes les apps partagent l'authentification SuperTokens via `nina.fm-api`.
 
@@ -25,19 +25,19 @@ Claude lit les CLAUDE.md en cascade (répertoire courant → racine).
 
 ```bash
 # Mode Mixtaper (feature front + API mix-sessions)
-cd ~/Sites/nina/nina.fm-mixtaper && claude
+cd ~/Sites/nina/nina.fm-apps-workspace/nina.fm-mixtaper && claude
 
 # Mode API seule (infra, auth, autres modules)
-cd ~/Sites/nina/nina.fm-api && claude
+cd ~/Sites/nina/nina.fm-apps-workspace/nina.fm-api && claude
 
 # Mode Face B (backoffice)
-cd ~/Sites/nina/nina.fm-faceb && claude
+cd ~/Sites/nina/nina.fm-apps-workspace/nina.fm-faceb && claude
 
 # Mode Website
-cd ~/Sites/nina/nina.fm-website && claude
+cd ~/Sites/nina/nina.fm-apps-workspace/nina.fm-website && claude
 
 # Mode global (décisions archi cross-repo, refactors)
-cd ~/Sites/nina && claude
+cd ~/Sites/nina/nina.fm-apps-workspace && claude
 ```
 
 En mode Mixtaper, le filesystem MCP donne accès à `nina.fm-api/` pour les features cross-repo.
@@ -48,13 +48,13 @@ En mode Mixtaper, le filesystem MCP donne accès à `nina.fm-api/` pour les feat
 
 Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 
-| Module | Accès |
-|--------|-------|
-| `mix-sessions/` | ✅ Toucher librement |
-| `types/` | ✅ Types TS spécifiques Mixtaper |
-| `files/` (partie audio) | ⚠️ Uniquement `audio-files.*` |
-| `auth/`, `users/`, `common/` | 🔒 Shared — ne modifier que si explicitement nécessaire |
-| `mixtapes/`, `djs/`, `tags/`, `stream/`, `invitations/` | 🚫 Autres apps — ne jamais toucher pour Mixtaper |
+| Module                                                  | Accès                                                   |
+| ------------------------------------------------------- | ------------------------------------------------------- |
+| `mix-sessions/`                                         | ✅ Toucher librement                                    |
+| `types/`                                                | ✅ Types TS spécifiques Mixtaper                        |
+| `files/` (partie audio)                                 | ⚠️ Uniquement `audio-files.*`                           |
+| `auth/`, `users/`, `common/`                            | 🔒 Shared — ne modifier que si explicitement nécessaire |
+| `mixtapes/`, `djs/`, `tags/`, `stream/`, `invitations/` | 🚫 Autres apps — ne jamais toucher pour Mixtaper        |
 
 ---
 
@@ -73,18 +73,18 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 
 Configurés dans `.mcp.json` :
 
-| MCP | Rôle |
-|-----|------|
-| `filesystem` | Accès à `~/Sites/nina/` pour navigation cross-repo |
-| `github` | Branches, PRs, reviews (nécessite `GITHUB_PERSONAL_ACCESS_TOKEN`) |
-| `context7` | Docs à jour : SolidJS, NestJS, TypeORM, Vite, Vitest |
+| MCP          | Rôle                                                                     |
+| ------------ | ------------------------------------------------------------------------ |
+| `filesystem` | Accès à `~/Sites/nina/nina.fm-apps-workspace` pour navigation cross-repo |
+| `github`     | Branches, PRs, reviews (nécessite `GITHUB_PERSONAL_ACCESS_TOKEN`)        |
+| `context7`   | Docs à jour : SolidJS, NestJS, TypeORM, Vite, Vitest                     |
 
 ---
 
 ## Structure de ce Workspace
 
 ```
-~/Sites/nina/                          ← Ce repo (nina.fm-workspace)
+~/Sites/nina/nina.fm-apps-workspace    ← Ce repo (nina.fm-apps-workspace)
 ├── WORKSPACE.md                       ← Ce fichier
 ├── .gitignore                         ← Ignore les repos de code
 ├── .mcp.json                          ← Config MCP partagée
@@ -120,15 +120,25 @@ nina.fm-website/                       ← Repo Nuxt (son propre git)
 
 ---
 
+## Prérequis Versions
+
+```bash
+# pnpm v10 requis pour tous les repos (packageManager: pnpm@10.12.4)
+corepack enable
+corepack use pnpm@10.12.4   # ou: npm install -g pnpm@10
+```
+
+> ⚠️ La machine de dev doit tourner avec pnpm v10. Les hooks git (husky) et les installs pnpm échoueront silencieusement avec pnpm v9.
+
 ## Installation sur une Nouvelle Machine
 
 ```bash
-# 1. Cloner le workspace (crée ~/Sites/nina/ avec la config)
-mkdir -p ~/Sites/nina
-git clone git@github.com:YOUR_ORG/nina.fm-workspace.git ~/Sites/nina
+# 1. Cloner le workspace (crée ~/Sites/nina/nina.fm-apps-workspace avec la config)
+mkdir -p ~/Sites/nina/nina.fm-apps-workspace
+git clone git@github.com:YOUR_ORG/nina.fm-apps-workspace.git ~/Sites/nina/nina.fm-apps-workspace
 
 # 2. Cloner les repos de code
-cd ~/Sites/nina
+cd ~/Sites/nina/nina.fm-apps-workspace
 git clone git@github.com:YOUR_ORG/nina.fm-api.git
 git clone git@github.com:YOUR_ORG/nina.fm-mixtaper.git
 git clone git@github.com:YOUR_ORG/nina.fm-faceb.git
