@@ -60,12 +60,32 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 
 ## Conventions Cross-Repo
 
+- **Package manager** : `pnpm` partout — jamais `npm` ou `yarn`
 - **Conventional Commits** dans tous les repos : `type(scope): description`
 - **TypeScript strict** : pas de `any` dans le nouveau code — `unknown` + type guards
 - **Coverage minimum** : 80% global (avec exceptions explicites pour fichiers non-testables)
 - **Bruno files** : toujours mis à jour après une modification d'endpoint API
 - **Squash merge** sur `main` / `master` — historique détaillé dans les PRs
 - **Lint + type-check** : automatiques via hooks Claude Code à chaque édition
+
+### Versioning avec Changesets
+
+Tous les repos utilisent `@changesets/cli` avec `"commit": false`.
+
+**Workflow :**
+1. Avant de merger une PR avec un changement user-facing → `pnpm changeset` (crée un fichier `.changeset/*.md`)
+2. Au merge sur `main`, le CI détecte les changesets et exécute `pnpm changeset:version` (bump `package.json` + génère `CHANGELOG.md`)
+3. Le CI commite manuellement avec `chore: release vX.Y.Z [skip ci]` puis crée le tag Git
+
+**En local** (si besoin d'appliquer manuellement) :
+```bash
+pnpm changeset:version        # Modifie package.json + CHANGELOG, sans commiter
+git add -A
+git commit -m "chore: release vX.Y.Z [skip ci]"
+```
+
+> `"commit": false` est obligatoire pour que le message reste conventionnel et passe commitlint.
+> `[skip ci]` dans le message empêche le CI de se redéclencher sur le commit de release.
 
 ---
 
@@ -90,16 +110,17 @@ Configurés dans `.mcp.json` :
 ├── .mcp.json                          ← Config MCP partagée
 ├── setup.sh                           ← Script d'installation sur nouvelle machine
 └── .claude/
-    ├── commands/                      ← Skills disponibles depuis tous les repos
-    │   ├── feature.md                 ← /feature — démarrer une feature (Phase 3)
-    │   ├── pr.md                      ← /pr — créer une PR (Phase 3)
-    │   └── review.md                  ← /review — review IA (Phase 5)
     └── memory/
         └── ecosystem.md               ← Mémoire persistante de l'écosystème
 
 nina.fm-api/                           ← Repo NestJS (son propre git)
 ├── CLAUDE.md
 └── .claude/
+    ├── commands/                      ← Skills disponibles dans ce repo
+    │   ├── task.md                    ← /task — plan d'implémentation
+    │   ├── epic.md                    ← /epic — décomposition feature
+    │   ├── pr.md                      ← /pr — qualité + création PR
+    │   └── review.md                  ← /review — review IA
     ├── settings.json                  ← Hooks qualité
     └── memory/
         └── architecture.md
@@ -107,6 +128,12 @@ nina.fm-api/                           ← Repo NestJS (son propre git)
 nina.fm-mixtaper/                      ← Repo SolidJS (son propre git)
 ├── CLAUDE.md
 └── .claude/
+    ├── commands/                      ← Skills disponibles dans ce repo
+    │   ├── task.md                    ← /task — plan d'implémentation
+    │   ├── epic.md                    ← /epic — décomposition feature
+    │   ├── pr.md                      ← /pr — qualité + création PR
+    │   ├── review.md                  ← /review — review IA
+    │   └── sync-types.md              ← /sync-types — regénère types API
     ├── settings.json                  ← Hooks qualité
     └── memory/
         └── architecture.md
@@ -166,21 +193,34 @@ npx -y @upstash/context7-mcp --help
 
 ---
 
+## Commandes Disponibles
+
+Disponibles dans chaque repo via `.claude/commands/` :
+
+| Commande | Description |
+|----------|-------------|
+| `/task "description"` | Analyse le codebase et crée un plan d'implémentation détaillé. Accepte un prefix Conventional Commit optionnel qui détermine le type de branche créée : `/task "feat: ..."`, `/task "fix: ..."`, `/task "refactor: ..."`, etc. Sans prefix, `feat` est utilisé par défaut. |
+| `/epic "description"` | Explore et décompose une grande feature en sous-features actionnables |
+| `/pr` | Checks qualité finaux + création de la PR |
+| `/review` | Review IA du diff → commentaire structuré sur la PR |
+
 ## Workflow Agentique (rappel)
 
 ```
-1. /feature "description de la feature"
-   → Plan mode : agent analyse codebase + propose plan
-   → Tu valides / corriges
+1. /epic "grande feature"          (optionnel, si périmètre large)
+   → Décomposition en sous-features → tu valides
 
-2. Agent implémente dans un worktree isolé (branche auto)
-   → Hooks qualité : lint + type-check automatiques
+2. /task "description de la feature"
+   → Plan d'implémentation → tu valides / corriges
 
-3. /pr
+3. Agent implémente
+   → Hooks qualité : lint + type-check automatiques à chaque édition
+
+4. /pr
    → Qualité finale + création PR(s) sur les repos impactés
 
-4. /review
-   → Agent review du diff → commentaire structuré sur la PR
+5. /review
+   → Review IA du diff → commentaire structuré sur la PR
 
-5. Tu valides la PR → merge → déploiement automatique (GitHub Actions)
+6. Tu valides la PR → merge → déploiement automatique (GitHub Actions)
 ```
