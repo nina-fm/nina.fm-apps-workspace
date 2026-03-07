@@ -18,7 +18,30 @@ Toutes les apps partagent l'authentification SuperTokens via `nina.fm-api`.
 
 ---
 
-## Dev Modes
+## Dev Local — Lancer l'environnement
+
+Depuis le workspace (`~/Sites/nina/nina.fm-apps-workspace`) :
+
+```bash
+make dev             # Lance l'infra Docker seule (postgres:5432, redis:6379, supertokens:3567)
+make dev-mixtaper    # Infra + API (start:dev) + Mixtaper
+make dev-faceb       # Infra + API (start:dev) + Face B
+make dev-website     # Infra + API (start:dev) + Website
+make dev-webradio    # Infra + API (start:dev) + Face B + Website
+make dev-stop        # Arrête l'infra Docker
+make dev-logs        # Logs en temps réel de l'infra
+```
+
+**Architecture :** L'infra (postgres, redis, supertokens) tourne en Docker. L'API NestJS tourne sur l'hôte via `pnpm start:dev` pour garder les logs accessibles et le hot-reload rapide.
+
+**Fichiers Docker :**
+- `docker-compose.dev.yml` (workspace) — compose toute l'infra de dev via `include`
+- `nina.fm-api/docker-compose.dev.yml` — postgres + redis
+- `nina.fm-auth/docker-compose.dev.yml` — supertokens-postgres + supertokens-core
+- `nina.fm-api/docker-compose.infra-prod.yml` — infra prod (postgres + redis serveur)
+- `nina.fm-api/docker-compose.prod.yml` — API prod (déployée via CI)
+
+## Dev Modes Claude
 
 Le "dev mode" = le répertoire depuis lequel tu lances Claude Code.
 Claude lit les CLAUDE.md en cascade (répertoire courant → racine).

@@ -1,0 +1,17 @@
+# Docker Compose — Environnement de développement Nina.fm
+#
+# Lance toute l'infra nécessaire pour le dev local :
+#   - PostgreSQL (API)  → localhost:5432
+#   - Redis             → localhost:6379
+#   - SuperTokens DB    → localhost:5433
+#   - SuperTokens Core  → localhost:3567
+#
+# L'API NestJS tourne sur l'hôte via `pnpm start:dev` (pas en Docker).
+#
+# Usage : make dev   (ou docker compose -f docker-compose.dev.yml up -d)
+
+name: nina-dev
+
+include:
+  - path: ./nina.fm-api/docker-compose.dev.yml
+  - path: ./nina.fm-auth/docker-compose.dev.yml
