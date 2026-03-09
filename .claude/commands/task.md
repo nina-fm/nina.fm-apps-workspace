@@ -10,20 +10,29 @@ You are in **plan mode**. Your goal is to explore the codebase, understand the c
 
 Before writing anything:
 - Read `CLAUDE.md` (and parent `CLAUDE.md` files) to understand current conventions
-- Search for files relevant to the feature: existing hooks, services, components, types that may apply
+- Search for files relevant to the task: existing hooks, services, components, types that may apply
 - Identify patterns to follow (look at similar existing implementations)
 - Check that no existing hook/service already covers part of the need
 
 ---
 
-### Step 2 — Create the feature branch
+### Step 2 — Create the branch
 
-Create a dedicated branch before presenting the plan:
+Detect the Conventional Commit type from `$ARGUMENTS` and create the branch accordingly:
 
 ```bash
-SLUG=$(echo "$ARGUMENTS" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | cut -c1-50 | sed 's/-$//')
-git checkout -b feat/$SLUG
-echo "Branch created: feat/$SLUG"
+ARGS="$ARGUMENTS"
+# Detect type prefix (feat/fix/refactor/chore/docs/test)
+if echo "$ARGS" | grep -qE '^(feat|fix|refactor|chore|docs|test)(\([^)]*\))?:'; then
+  TYPE=$(echo "$ARGS" | sed -E 's/^(feat|fix|refactor|chore|docs|test)(\([^)]*\))?:.*/\1/')
+  DESCRIPTION=$(echo "$ARGS" | sed -E 's/^(feat|fix|refactor|chore|docs|test)(\([^)]*\))?:\s*//')
+else
+  TYPE="feat"
+  DESCRIPTION="$ARGS"
+fi
+SLUG=$(echo "$DESCRIPTION" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | cut -c1-50 | sed 's/-$//')
+git checkout -b $TYPE/$SLUG
+echo "Branch created: $TYPE/$SLUG"
 ```
 
 ---
@@ -34,11 +43,11 @@ Structure your plan **exactly** as follows:
 
 ---
 
-**Feature:** $ARGUMENTS
-**Branch:** `feat/[slug]`
+**Task:** $ARGUMENTS
+**Branch:** `[type]/[slug]`
 
 #### Summary
-[2–3 sentences: what will be built, why, and what it changes for the user/developer]
+[2–3 sentences: what will be built/fixed/changed, why, and what it changes for the user/developer]
 
 #### Files to create
 | File | Purpose |
