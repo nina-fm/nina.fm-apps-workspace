@@ -53,6 +53,50 @@ const TrackItem = ({ seconds }) => {
 
 Une fonction pure = sans side effects, sans dépendances framework, testable directement avec `expect(fn(input)).toBe(output)`.
 
+### Architecture Feature-Based
+
+**Organiser par domaine fonctionnel, pas par type technique.**
+
+```
+# ❌ Organisation par type (à éviter)
+components/
+  DjCard.vue
+  MixtapeList.vue
+hooks/
+  useDj.ts
+  useMixtape.ts
+
+# ✅ Organisation par feature
+components/
+  djs/          ← composants du domaine DJs
+    DjCard.vue
+    DjAvatar.vue
+  mixtapes/     ← composants du domaine Mixtapes
+    MixtapeList.vue
+    MixtapeCard.vue
+hooks/          ← (ou composables/)
+  djs/
+    useDjForm.ts
+    useDjList.ts
+  mixtapes/
+    useMixtape.ts
+lib/            ← logique métier pure, par domaine
+  djs/
+    formatDj.ts
+    formatDj.test.ts
+  mixtapes/
+    sortMixtapes.ts
+```
+
+**Règles :**
+- Chaque feature est un dossier nommé par domaine : `audio/`, `djs/`, `auth/`, `session/`…
+- Les fichiers d'un domaine (composants, hooks, types, utils, tests) sont **co-localisés** dans ce dossier
+- `components/ui/` — primitives UI partagées uniquement (Shadcn, Kobalte…)
+- `components/common/` — composants **vraiment** cross-feature (layout, navigation globale…)
+- Si une feature grossit, lui donner son propre sous-dossier structuré — ne pas aplatir
+
+Pour NestJS, c'est le pattern module natif : chaque module = une feature.
+
 ### Composants Minimalistes
 
 - Un composant UI = props + template + events. Pas de logique métier, pas d'appels API directs.
