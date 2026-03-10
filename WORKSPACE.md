@@ -13,6 +13,7 @@ Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (
 | `nina.fm-mixtaper` | SolidJS + SolidStart             | App de création de mixtapes              | 3000       |
 | `nina.fm-faceb`    | Nuxt 4                           | Backoffice admin                         | 3001       |
 | `nina.fm-website`  | Nuxt 4                           | Site public / radio                      | 3002       |
+| `nina.fm-auth`     | SuperTokens (Docker)             | Service d'authentification (infra seule) | 3567       |
 
 Toutes les apps partagent l'authentification SuperTokens via `nina.fm-api`.
 
@@ -89,6 +90,7 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 - **Coverage minimum** : 80% global (avec exceptions explicites pour fichiers non-testables)
 - **Bruno files** : toujours mis à jour après une modification d'endpoint API
 - **Squash merge** sur `main` / `master` — historique détaillé dans les PRs
+- **Stacked PRs** : une PR peut pointer vers la branche de la PR précédente pour avoir un diff cohérent. **Au moment du merge d'une PR dans `main`**, mettre immédiatement à jour les PRs qui la référençaient pour qu'elles pointent vers `main` (GitHub "Edit" ou `git rebase main`).
 - **Lint + type-check** : automatiques via hooks Claude Code à chaque édition
 
 ### Versioning avec Changesets
@@ -129,12 +131,13 @@ Configurés dans `.mcp.json` :
 ```
 ~/Sites/nina/nina.fm-apps-workspace    ← Ce repo (nina.fm-apps-workspace)
 ├── WORKSPACE.md                       ← Ce fichier
+├── Makefile                           ← Commandes dev (make dev, make dev-*)
+├── docker-compose.dev.yml             ← Compose global (inclut api + auth)
 ├── .gitignore                         ← Ignore les repos de code
 ├── .mcp.json                          ← Config MCP partagée
 ├── setup.sh                           ← Script d'installation sur nouvelle machine
 └── .claude/
-    └── memory/
-        └── ecosystem.md               ← Mémoire persistante de l'écosystème
+    └── memory/                        ← Mémoire persistante (cross-session)
 
 nina.fm-api/                           ← Repo NestJS (son propre git)
 ├── CLAUDE.md
@@ -144,9 +147,12 @@ nina.fm-api/                           ← Repo NestJS (son propre git)
     │   ├── epic.md                    ← /epic — décomposition feature
     │   ├── pr.md                      ← /pr — qualité + création PR
     │   └── review.md                  ← /review — review IA
-    ├── settings.json                  ← Hooks qualité
+    ├── settings.json                  ← Hooks qualité (eslint .ts, type-check avant commit)
+    ├── settings.local.json
     └── memory/
-        └── architecture.md
+        ├── architecture.md
+        ├── migrations.md
+        └── workflow.md
 
 nina.fm-mixtaper/                      ← Repo SolidJS (son propre git)
 ├── CLAUDE.md
@@ -157,15 +163,42 @@ nina.fm-mixtaper/                      ← Repo SolidJS (son propre git)
     │   ├── pr.md                      ← /pr — qualité + création PR
     │   ├── review.md                  ← /review — review IA
     │   └── sync-types.md              ← /sync-types — regénère types API
-    ├── settings.json                  ← Hooks qualité
+    ├── settings.json                  ← Hooks qualité (eslint .ts/.tsx, type-check avant commit)
+    ├── settings.local.json
+    ├── worktrees/                     ← Git worktrees (Claude Code)
     └── memory/
-        └── architecture.md
+        ├── architecture.md
+        └── workflow.md
 
 nina.fm-faceb/                         ← Repo Nuxt (son propre git)
-└── CLAUDE.md                          ← À créer quand besoin
+├── CLAUDE.md
+└── .claude/
+    ├── commands/                      ← Skills disponibles dans ce repo
+    │   ├── task.md                    ← /task — plan d'implémentation
+    │   ├── epic.md                    ← /epic — décomposition feature
+    │   ├── pr.md                      ← /pr — qualité + création PR
+    │   ├── review.md                  ← /review — review IA
+    │   └── sync-types.md              ← /sync-types — regénère types API
+    ├── settings.json                  ← Hooks qualité (eslint .ts/.vue, type-check avant commit)
+    └── settings.local.json
 
 nina.fm-website/                       ← Repo Nuxt (son propre git)
-└── CLAUDE.md                          ← À créer quand besoin
+├── CLAUDE.md
+└── .claude/
+    ├── commands/                      ← Skills disponibles dans ce repo
+    │   ├── task.md                    ← /task — plan d'implémentation
+    │   ├── epic.md                    ← /epic — décomposition feature
+    │   ├── pr.md                      ← /pr — qualité + création PR
+    │   └── review.md                  ← /review — review IA
+    ├── settings.json                  ← Hooks qualité (eslint .ts/.vue, lint avant commit)
+    └── settings.local.json
+
+nina.fm-auth/                          ← Repo infra SuperTokens (son propre git)
+├── README.md
+├── QUICK_START.md
+├── docker-compose.dev.yml             ← SuperTokens core + postgres dédié
+├── docker-compose.prod.yml
+└── Makefile
 ```
 
 ---
@@ -226,6 +259,7 @@ Disponibles dans chaque repo via `.claude/commands/` :
 | `/epic "description"` | Explore et décompose une grande feature en sous-features actionnables |
 | `/pr` | Checks qualité finaux + création de la PR |
 | `/review` | Review IA du diff → commentaire structuré sur la PR |
+| `/sync-types` | Regénère les types API depuis l'OpenAPI (mixtaper + faceb uniquement) |
 
 ## Workflow Agentique (rappel)
 
