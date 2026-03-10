@@ -89,6 +89,7 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 - **TypeScript strict** : pas de `any` dans le nouveau code — `unknown` + type guards
 - **Coverage minimum** : 80% global (avec exceptions explicites pour fichiers non-testables)
 - **Bruno files** : toujours mis à jour après une modification d'endpoint API
+- **Sync avant de tirer une branche** : toujours `git pull origin main` avant `git checkout -b` — une branche tirée depuis un `main` en retard pollue le diff de la PR avec des fichiers obsolètes
 - **Squash merge** sur `main` / `master` — historique détaillé dans les PRs
 - **Stacked PRs** : une PR peut pointer vers la branche de la PR précédente pour avoir un diff cohérent. **Au moment du merge d'une PR dans `main`**, mettre immédiatement à jour les PRs qui la référençaient pour qu'elles pointent vers `main` (GitHub "Edit" ou `git rebase main`).
 - **Lint + type-check** : automatiques via hooks Claude Code à chaque édition
