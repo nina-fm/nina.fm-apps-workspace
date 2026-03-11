@@ -249,3 +249,14 @@ Controller   ← Routes, Swagger, validation entrée, format réponse { data: T 
 - DTOs : décorateurs `class-validator` + `@ApiProperty()` sur chaque champ exposé
 - `PartialType(CreateDto)` pour les Update DTOs
 - **Voir le CLAUDE.md du repo** pour les patterns complets (auth, migrations, Bruno files…)
+
+---
+
+## Workflow Git & GitHub
+
+- **Merger une PR** : toujours via `mcp__github__merge_pull_request` avec `merge_method: "squash"` — jamais avec `git merge` + `git push`
+- **Squash merge** sur `main` — un commit par PR, historique propre
+- **Changeset obligatoire** avant de merger toute PR `feat:` ou `fix:` — `pnpm changeset` crée `.changeset/*.md`
+- **Sync avant de tirer une branche** : `git pull origin main` avant `git checkout -b`
+- **Suppression automatique des branches** au merge (`delete_branch_on_merge` activé sur tous les repos)
+- **Mémoire projet** : consigner les conventions dans `CLAUDE.md` (workspace ou repo) — jamais dans la mémoire user (`~/.claude/`) sauf préférences vraiment personnelles
