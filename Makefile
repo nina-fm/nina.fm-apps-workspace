@@ -29,15 +29,27 @@ dev-logs:
 
 ## Infra + API (start:dev) + Mixtaper
 dev-mixtaper: dev
-	cd nina.fm-mixtaper && pnpm dev:stack
+	npx --yes concurrently -k \
+		-n "API,Mixtaper" \
+		-c "bgWhite.black,bgMagenta.white" \
+		"cd nina.fm-api && pnpm start:dev" \
+		"cd nina.fm-mixtaper && pnpm dev"
 
 ## Infra + API (start:dev) + Face B (backoffice)
 dev-faceb: dev
-	cd nina.fm-faceb && pnpm dev:stack
+	npx --yes concurrently -k \
+		-n "API,FaceB" \
+		-c "bgWhite.black,bgBlue.white" \
+		"cd nina.fm-api && pnpm start:dev" \
+		"cd nina.fm-faceb && pnpm dev"
 
 ## Infra + API (start:dev) + Website
 dev-website: dev
-	cd nina.fm-website && pnpm dev:stack
+	npx --yes concurrently -k \
+		-n "API,Website" \
+		-c "bgWhite.black,bgGreen.black" \
+		"cd nina.fm-api && pnpm start:dev" \
+		"cd nina.fm-website && pnpm dev"
 
 ## Infra + API (start:dev) + Face B + Website
 dev-webradio: dev
