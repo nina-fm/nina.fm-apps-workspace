@@ -1,6 +1,6 @@
 # Nina.fm Workspace
 
-Workspace de configuration Claude Code pour l'écosystème Nina.fm.
+Workspace de configuration Claude Code pour l'écosystème applicatif de Nina.fm.
 Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (CLAUDE.md, MCP, hooks, skills, memory).
 
 ---
@@ -38,6 +38,7 @@ make dev-logs        # Logs en temps réel de l'infra
 **Architecture :** L'infra (postgres, redis, supertokens) tourne en Docker. L'API NestJS tourne sur l'hôte via `pnpm start:dev` pour garder les logs accessibles et le hot-reload rapide.
 
 **Fichiers Docker :**
+
 - `docker-compose.dev.yml` (workspace) — compose toute l'infra de dev via `include`
 - `nina.fm-api/docker-compose.dev.yml` — postgres + redis
 - `nina.fm-auth/docker-compose.dev.yml` — supertokens-postgres + supertokens-core
@@ -103,11 +104,13 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 Tous les repos utilisent `@changesets/cli` avec `"commit": false`.
 
 **Workflow :**
+
 1. Avant de merger une PR avec un changement user-facing → `pnpm changeset` (crée un fichier `.changeset/*.md`)
 2. Au merge sur `main`, le CI détecte les changesets et exécute `pnpm changeset:version` (bump `package.json` + génère `CHANGELOG.md`)
 3. Le CI commite manuellement avec `chore: release vX.Y.Z [skip ci]` puis crée le tag Git
 
 **En local** (si besoin d'appliquer manuellement) :
+
 ```bash
 pnpm changeset:version        # Modifie package.json + CHANGELOG, sans commiter
 git add -A
@@ -258,13 +261,13 @@ npx -y @upstash/context7-mcp --help
 
 Disponibles dans chaque repo via `.claude/commands/` :
 
-| Commande | Description |
-|----------|-------------|
+| Commande              | Description                                                                                                                                                                                                                                                                |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/task "description"` | Analyse le codebase et crée un plan d'implémentation détaillé. Accepte un prefix Conventional Commit optionnel qui détermine le type de branche créée : `/task "feat: ..."`, `/task "fix: ..."`, `/task "refactor: ..."`, etc. Sans prefix, `feat` est utilisé par défaut. |
-| `/epic "description"` | Explore et décompose une grande feature en sous-features actionnables |
-| `/pr` | Checks qualité finaux + création de la PR |
-| `/review` | Review IA du diff → commentaire structuré sur la PR |
-| `/sync-types` | Regénère les types API depuis l'OpenAPI (mixtaper + faceb uniquement) |
+| `/epic "description"` | Explore et décompose une grande feature en sous-features actionnables                                                                                                                                                                                                      |
+| `/pr`                 | Checks qualité finaux + création de la PR                                                                                                                                                                                                                                  |
+| `/review`             | Review IA du diff → commentaire structuré sur la PR                                                                                                                                                                                                                        |
+| `/sync-types`         | Regénère les types API depuis l'OpenAPI (mixtaper + faceb uniquement)                                                                                                                                                                                                      |
 
 ## Workflow Agentique (rappel)
 

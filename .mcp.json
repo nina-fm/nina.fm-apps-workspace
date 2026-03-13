@@ -2,8 +2,12 @@
   "mcpServers": {
     "filesystem": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/vincent/Sites/nina/nina.fm-apps-workspace"],
-      "description": "Accès cross-repo à tout le workspace Nina.fm"
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/vincent/Sites/nina/nina.fm-apps-workspace"
+      ],
+      "description": "Accès cross-repo à tout le workspace applicatif de Nina.fm"
     },
     "github": {
       "command": "npx",

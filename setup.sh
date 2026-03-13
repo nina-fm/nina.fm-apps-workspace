@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# setup.sh — Installation du workspace Nina.fm sur une nouvelle machine
+# setup.sh — Installation du workspace apps Nina.fm sur une nouvelle machine
 # Usage: bash setup.sh
 
 set -e
 
-echo "🎛️  Nina.fm Workspace Setup"
+echo "🎛️  Nina.fm Apps Workspace Setup"
 echo "================================"
 
 WORKSPACE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
