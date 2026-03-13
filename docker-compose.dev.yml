@@ -13,5 +13,5 @@
 name: nina-dev
 
 include:
-  - path: ./nina.fm-api/docker-compose.dev.yml
+  - path: ./nina.fm-api/infra/docker-compose.dev.yml
   - path: ./nina.fm-auth/docker-compose.dev.yml

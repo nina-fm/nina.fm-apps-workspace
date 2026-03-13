@@ -40,10 +40,10 @@ make dev-logs        # Logs en temps réel de l'infra
 **Fichiers Docker :**
 
 - `docker-compose.dev.yml` (workspace) — compose toute l'infra de dev via `include`
-- `nina.fm-api/docker-compose.dev.yml` — postgres + redis
+- `nina.fm-api/infra/docker-compose.dev.yml` — postgres + redis dev
 - `nina.fm-auth/docker-compose.dev.yml` — supertokens-postgres + supertokens-core
-- `nina.fm-api/docker-compose.infra-prod.yml` — infra prod (postgres + redis serveur)
-- `nina.fm-api/docker-compose.prod.yml` — API prod (déployée via CI)
+- `nina.fm-api/infra/docker-compose.yml` — infra prod (postgres + redis serveur)
+- `nina.fm-api/docker-compose.yml` — API prod (déployée via CI)
 
 ## Dev Modes Claude
 
