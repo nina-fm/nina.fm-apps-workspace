@@ -75,7 +75,7 @@ Tester intelligemment, pas exhaustivement. Objectif : maintenabilité et non-ré
 
 ## Self-Improvement
 
-Après toute correction projet-spécifique (erreur sur une convention du codebase, mauvaise compréhension d'une règle propre à Nina.fm) : mettre à jour `.claude/lessons.md` du repo concerné avec la leçon, pour ne pas répéter la même erreur.
+Après toute correction ou erreur détectée (correction de l'utilisateur, commande qui échoue, mauvaise approche constatée en cours de route) : mettre à jour `.claude/rules/lessons.md` du repo concerné (ou du workspace si la leçon est transversale) avec la leçon, en une ligne concise. Ne pas attendre que l'utilisateur le signale — si je réalise que j'ai pris la mauvaise voie, j'ajoute la leçon moi-même. Ce fichier est chargé automatiquement par Claude Code à chaque session.
 
 ## Workflow Git & GitHub
 
