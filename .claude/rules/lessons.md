@@ -6,6 +6,7 @@ description: Leçons apprises — workspace Nina.fm (chargé automatiquement dan
 
 ## Changesets
 - `pnpm changeset` est interactif — ne jamais l'exécuter, ça bloque. Toujours créer le fichier `.changeset/nom-descriptif.md` manuellement avec le frontmatter `---\n"package": patch|minor|major\n---\ndescription`
+- Ne jamais mettre `[skip ci]` sur un commit de changeset dans une PR — le squash merge propage le tag et skippa la CI au merge
 
 ## Workflow PR (ordre obligatoire)
 - plan mode → branche (`git pull origin main && git checkout -b`) → code → changeset (chaque repo `feat:`/`fix:`) → commit → push → PR via `mcp__github__create_pull_request` → review si demandée
