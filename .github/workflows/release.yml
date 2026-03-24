@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      skip-ci:
+        description: 'Add [skip ci] to release commit to prevent CI loop'
+        type: boolean
+        default: true
+    outputs:
+      version:
+        description: 'Released or current version (without v prefix)'
+        value: ${{ jobs.release.outputs.version }}
+      has_release:
+        description: 'Whether a new release was created'
+        value: ${{ jobs.release.outputs.has_release }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      HUSKY: '0'
+    outputs:
+      version: ${{ steps.versioning.outputs.version }}
+      has_release: ${{ steps.versioning.outputs.has_release }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Version and tag
+        id: versioning
+        run: |
+          if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            echo "📋 Hors main — version actuelle: $CURRENT_VERSION"
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "has_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          CHANGESET_FILES=$(ls .changeset/*.md 2>/dev/null | grep -v README || echo "")
+
+          if [ -n "$CHANGESET_FILES" ]; then
+            echo "📦 Changesets détectés, mise à jour de la version..."
+            pnpm changeset:version
+
+            CLEAN_VERSION=$(node -p "require('./package.json').version")
+            echo "🏷️ Nouvelle version: $CLEAN_VERSION"
+
+            git add -A
+            COMMIT_MSG="chore: release v$CLEAN_VERSION"
+            if [ "${{ inputs.skip-ci }}" = "true" ]; then
+              COMMIT_MSG="$COMMIT_MSG [skip ci]"
+            fi
+            # Commit uniquement s'il y a des changements (changeset:version peut ne pas en avoir)
+            git diff --staged --quiet || git commit -m "$COMMIT_MSG"
+
+            if ! git push origin main; then
+              echo "❌ Erreur lors du push du commit"
+              exit 1
+            fi
+
+            if git rev-parse "$CLEAN_VERSION" >/dev/null 2>&1; then
+              echo "🏷️ Tag $CLEAN_VERSION existe déjà, skip"
+            else
+              git tag "$CLEAN_VERSION"
+              if ! git push origin "$CLEAN_VERSION"; then
+                echo "❌ Erreur lors du push du tag"
+                exit 1
+              fi
+            fi
+
+            echo "✅ Version $CLEAN_VERSION créée, taguée et poussée avec succès"
+            echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
+            echo "has_release=true" >> $GITHUB_OUTPUT
+          else
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            echo "📋 Aucun changeset détecté, version actuelle: $CURRENT_VERSION"
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+            echo "has_release=false" >> $GITHUB_OUTPUT
+          fi
