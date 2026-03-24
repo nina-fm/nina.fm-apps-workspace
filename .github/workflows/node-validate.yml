@@ -17,7 +17,7 @@ on:
         default: false
 
 jobs:
-  test:
+  validate:
     runs-on: ubuntu-latest
     env:
       HUSKY: '0'
