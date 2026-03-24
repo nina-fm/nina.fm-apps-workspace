@@ -73,6 +73,10 @@ Tester intelligemment, pas exhaustivement. Objectif : maintenabilité et non-ré
 
 **NestJS** (`nina.fm-api`) : Module → Controller → Service → Entity + DTO, `PartialType(CreateDto)` pour les updates. → Voir CLAUDE.md du repo.
 
+## Workflow d'implémentation
+
+- Pour toute implémentation multi-étapes dans ce workspace : utiliser le skill `/task` pour analyser et planifier, puis créer des tasks (TaskCreate) pour suivre la progression étape par étape
+
 ## Self-Improvement
 
 Après toute correction ou erreur détectée (correction de l'utilisateur, commande qui échoue, mauvaise approche constatée en cours de route) : mettre à jour `.claude/rules/lessons.md` du repo concerné (ou du workspace si la leçon est transversale) avec la leçon, en une ligne concise. Ne pas attendre que l'utilisateur le signale — si je réalise que j'ai pris la mauvaise voie, j'ajoute la leçon moi-même. Ce fichier est chargé automatiquement par Claude Code à chaque session.
