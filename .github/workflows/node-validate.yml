@@ -1,4 +1,4 @@
-name: Node Test
+name: Node Validate
 
 on:
   workflow_call:
@@ -42,7 +42,7 @@ jobs:
         run: pnpm type-check
 
       - name: Run lint
-        if: ${{ !inputs.lint-strict }}
+        if: inputs.lint-strict == false
         run: pnpm lint
 
       - name: Run lint:strict
