@@ -17,8 +17,6 @@ Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (
 
 Toutes les apps partagent l'authentification SuperTokens via `nina.fm-api`.
 
-> **Note :** `nina.fm-mixtaper` est hébergé sous `fugudesign/nina.fm-mixtaper` (pas sous l'org nina-fm).
-
 ---
 
 ## Dev Local — Lancer l'environnement
@@ -226,14 +224,14 @@ corepack use pnpm@10.12.4   # ou: npm install -g pnpm@10
 ```bash
 # 1. Cloner le workspace (crée ~/Sites/nina/nina.fm-apps-workspace avec la config)
 mkdir -p ~/Sites/nina/nina.fm-apps-workspace
-git clone git@github.com:YOUR_ORG/nina.fm-apps-workspace.git ~/Sites/nina/nina.fm-apps-workspace
+git clone git@github.com:nina-fm/nina.fm-apps-workspace.git ~/Sites/nina/nina.fm-apps-workspace
 
 # 2. Cloner les repos de code
 cd ~/Sites/nina/nina.fm-apps-workspace
-git clone git@github.com:YOUR_ORG/nina.fm-api.git
-git clone git@github.com:YOUR_ORG/nina.fm-mixtaper.git
-git clone git@github.com:YOUR_ORG/nina.fm-faceb.git
-git clone git@github.com:YOUR_ORG/nina.fm-website.git
+git clone git@github.com:nina-fm/nina.fm-api.git
+git clone git@github.com:nina-fm/nina.fm-mixtaper.git
+git clone git@github.com:nina-fm/nina.fm-faceb.git
+git clone git@github.com:nina-fm/nina.fm-website.git
 
 # 3. Configurer les variables d'environnement
 cp nina.fm-api/.env.example nina.fm-api/.env
