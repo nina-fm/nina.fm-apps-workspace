@@ -12,10 +12,24 @@ Chaque repo affiche ses métriques clés directement sur GitHub, sans ouvrir d'o
 
 | Badge | Source | Repos concernés |
 |---|---|---|
+| `framework` | shields.io statique | api (NestJS), faceb (Nuxt), website (Nuxt), mixtaper (SolidJS) |
+| `typescript` | shields.io statique | api, faceb, website, mixtaper |
 | `version` | shields.io → `package.json` | api, faceb, website, mixtaper |
 | `tests` (passed/failed) | Codecov | api, faceb, website, mixtaper |
 | `coverage` | Codecov | api, faceb, website, mixtaper |
 | `build` | GitHub Actions natif | api, faceb, website, mixtaper |
+
+Badges statiques (shields.io) :
+```md
+<!-- NestJS -->
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=white)
+<!-- Nuxt -->
+![Nuxt](https://img.shields.io/badge/Nuxt-00DC82?logo=nuxt.js&logoColor=white)
+<!-- SolidJS -->
+![SolidJS](https://img.shields.io/badge/SolidJS-2C4F7C?logo=solid&logoColor=white)
+<!-- TypeScript -->
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+```
 
 ### Prérequis
 
@@ -83,6 +97,8 @@ coverage:
 3. S'assurer que les tests génèrent un rapport LCOV (`--coverage --reporter=lcov`)
 4. Ajouter les badges dans `README.md` :
    ```md
+   ![NestJS](https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=white)
+   ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
    [![Version](https://img.shields.io/github/package-json/v/nina-fm/nina.fm-api)](...)
    [![Tests](https://codecov.io/gh/nina-fm/nina.fm-api/branch/main/graphs/badge.svg?type=tests)](...)
    [![Coverage](https://codecov.io/gh/nina-fm/nina.fm-api/branch/main/graph/badge.svg)](...)
