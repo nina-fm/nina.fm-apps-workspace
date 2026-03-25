@@ -17,7 +17,7 @@ Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (
 
 Toutes les apps partagent l'authentification SuperTokens via `nina.fm-api`.
 
-> **Note :** `nina.fm-mixtaper` est hébergé sous `fugudesign/nina.fm-mixtaper` (pas sous l'org Nina-fm).
+> **Note :** `nina.fm-mixtaper` est hébergé sous `fugudesign/nina.fm-mixtaper` (pas sous l'org nina-fm).
 
 ---
 
@@ -92,7 +92,7 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 - **TypeScript strict** : pas de `any` dans le nouveau code — `unknown` + type guards
 - **Coverage minimum** : 80% global (avec exceptions explicites pour fichiers non-testables)
 - **Bruno files** : toujours mis à jour après une modification d'endpoint API
-- **Suppression automatique des branches au merge** : `delete_branch_on_merge` activé sur tous les repos GitHub Nina-fm — à activer sur tout nouveau repo (GitHub Settings → General → "Automatically delete head branches")
+- **Suppression automatique des branches au merge** : `delete_branch_on_merge` activé sur tous les repos GitHub nina-fm — à activer sur tout nouveau repo (GitHub Settings → General → "Automatically delete head branches")
 - **Sync avant de tirer une branche** : toujours `git pull origin main` avant `git checkout -b` — une branche tirée depuis un `main` en retard pollue le diff de la PR avec des fichiers obsolètes
 - **Squash merge** sur `main` / `master` — historique détaillé dans les PRs
 - **Merger une PR via MCP** : toujours utiliser `mcp__github__merge_pull_request` avec `merge_method: "squash"` — ne jamais merger manuellement avec `git merge` + `git push`, ce qui laisserait la PR ouverte sur GitHub et contournerait le processus de review
