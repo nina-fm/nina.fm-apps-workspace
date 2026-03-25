@@ -58,6 +58,10 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+          # Sync with remote before checking changesets — handles rerun cases where
+          # a previous run already bumped the version and pushed to main
+          git pull --rebase origin main
+
           CHANGESET_FILES=$(ls .changeset/*.md 2>/dev/null | grep -v README || echo "")
 
           if [ -n "$CHANGESET_FILES" ]; then
