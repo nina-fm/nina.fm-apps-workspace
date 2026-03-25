@@ -15,6 +15,21 @@ on:
         description: 'Run lint:strict instead of lint'
         type: boolean
         default: false
+      codecov-enabled:
+        description: 'Upload coverage to Codecov'
+        type: boolean
+        default: false
+      lcov-path:
+        description: 'Path to the LCOV coverage file'
+        type: string
+        default: './coverage/lcov.info'
+      upload-on-branch:
+        description: 'Only upload coverage on this branch'
+        type: string
+        default: 'main'
+    secrets:
+      CODECOV_TOKEN:
+        required: false
 
 jobs:
   validate:
@@ -51,3 +66,11 @@ jobs:
 
       - name: Run tests
         run: pnpm test:coverage
+
+      - name: Upload coverage to Codecov
+        if: inputs.codecov-enabled && github.ref == format('refs/heads/{0}', inputs.upload-on-branch)
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ${{ inputs.lcov-path }}
+          fail_ci_if_error: false
