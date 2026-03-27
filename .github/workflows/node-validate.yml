@@ -93,8 +93,14 @@ jobs:
           GRAFANA_METRICS_TOKEN: ${{ secrets.GRAFANA_METRICS_TOKEN }}
         run: |
           COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
-          curl -sf -u "${GRAFANA_METRICS_USER}:${GRAFANA_METRICS_TOKEN}" \
+          echo "Pushing coverage=${COVERAGE} for app=${{ github.event.repository.name }}"
+          HTTP_STATUS=$(curl -s -o /tmp/grafana_push_response.txt -w "%{http_code}" \
+            -u "${GRAFANA_METRICS_USER}:${GRAFANA_METRICS_TOKEN}" \
             -X POST "${GRAFANA_METRICS_URL}" \
             -H "Content-Type: text/plain" \
-            --data-binary "test_coverage,app=${{ github.event.repository.name }} value=${COVERAGE}" \
+            --data-binary "test_coverage,app=${{ github.event.repository.name }} value=${COVERAGE}")
+          echo "HTTP status: ${HTTP_STATUS}"
+          cat /tmp/grafana_push_response.txt || true
+          [ "${HTTP_STATUS}" -ge 200 ] && [ "${HTTP_STATUS}" -lt 300 ] \
+            && echo "Coverage push succeeded" \
             || echo "Grafana metrics push failed (non-blocking)"
