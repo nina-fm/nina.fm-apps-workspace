@@ -10,24 +10,32 @@ Chaque repo affiche ses métriques clés directement sur GitHub, sans ouvrir d'o
 
 ### Badges cibles (par repo)
 
-| Badge | Source | Repos concernés |
-|---|---|---|
-| `framework` | shields.io statique | api (NestJS), faceb (Nuxt), website (Nuxt), mixtaper (SolidJS) |
-| `typescript` | shields.io statique | api, faceb, website, mixtaper |
-| `version` | shields.io → `package.json` | api, faceb, website, mixtaper |
-| `tests` (passed/failed) | Codecov | api, faceb, website, mixtaper |
-| `coverage` | Codecov | api, faceb, website, mixtaper |
-| `build` | GitHub Actions natif | api, faceb, website, mixtaper |
+| Badge                   | Source                      | Repos concernés                                                |
+| ----------------------- | --------------------------- | -------------------------------------------------------------- |
+| `framework`             | shields.io statique         | api (NestJS), faceb (Nuxt), website (Nuxt), mixtaper (SolidJS) |
+| `typescript`            | shields.io statique         | api, faceb, website, mixtaper                                  |
+| `version`               | shields.io → `package.json` | api, faceb, website, mixtaper                                  |
+| `tests` (passed/failed) | Codecov                     | api, faceb, website, mixtaper                                  |
+| `coverage`              | Codecov                     | api, faceb, website, mixtaper                                  |
+| `build`                 | GitHub Actions natif        | api, faceb, website, mixtaper                                  |
 
 Badges statiques (shields.io) :
+
 ```md
 <!-- NestJS -->
+
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=white)
+
 <!-- Nuxt -->
+
 ![Nuxt](https://img.shields.io/badge/Nuxt-00DC82?logo=nuxt.js&logoColor=white)
+
 <!-- SolidJS -->
+
 ![SolidJS](https://img.shields.io/badge/SolidJS-2C4F7C?logo=solid&logoColor=white)
+
 <!-- TypeScript -->
+
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ```
 
@@ -43,19 +51,20 @@ Badges statiques (shields.io) :
 Le step coverage est identique sur api et mixtaper → **mutualiser en reusable workflow** dans chaque repo.
 
 Créer `.github/workflows/coverage.yml` :
+
 ```yaml
 on:
   workflow_call:
     inputs:
       test-command:
         type: string
-        default: 'pnpm test:cov'
+        default: "pnpm test:cov"
       lcov-path:
         type: string
-        default: './coverage/lcov.info'
-      upload-on-branch:   # limiter aux pushes sur main pour économiser les uploads
+        default: "./coverage/lcov.info"
+      upload-on-branch: # limiter aux pushes sur main pour économiser les uploads
         type: string
-        default: 'main'
+        default: "main"
     secrets:
       CODECOV_TOKEN:
         required: true
@@ -68,7 +77,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          cache: 'pnpm'
+          cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: ${{ inputs.test-command }}
       - uses: codecov/codecov-action@v4
@@ -79,12 +88,13 @@ jobs:
 ```
 
 Appelé depuis la CI principale :
+
 ```yaml
 coverage:
   uses: ./.github/workflows/coverage.yml
   with:
-    test-command: 'pnpm test --coverage'  # adapter par repo
-    lcov-path: './coverage/lcov.info'
+    test-command: "pnpm test --coverage" # adapter par repo
+    lcov-path: "./coverage/lcov.info"
   secrets: inherit
 ```
 
@@ -120,6 +130,7 @@ Même reusable workflow — tests dans `app/lib/`, adapter `test-command` selon 
 #### `nina.fm-faceb` et `nina.fm-website` (Nuxt 4)
 
 Badges build + version + license uniquement (pas de tests unitaires à ce stade) :
+
 ```md
 [![Build](https://github.com/nina-fm/nina.fm-faceb/actions/workflows/ci.yml/badge.svg)](...)
 [![Version](https://img.shields.io/github/package-json/v/nina-fm/nina.fm-faceb)](...)
@@ -141,12 +152,12 @@ Un seul dashboard pour logs, métriques, errors, CI failures, coverage.
 
 ### Free tier Grafana Cloud
 
-| Ressource | Limite gratuite |
-|---|---|
-| Logs (Loki) | 10 GB / mois |
+| Ressource              | Limite gratuite       |
+| ---------------------- | --------------------- |
+| Logs (Loki)            | 10 GB / mois          |
 | Métriques (Prometheus) | 10 000 series actives |
-| Traces (Tempo) | 50 GB / mois |
-| Utilisateurs | 3 |
+| Traces (Tempo)         | 50 GB / mois          |
+| Utilisateurs           | 3                     |
 
 ### Architecture cible
 
@@ -167,14 +178,16 @@ Codecov ───────────────────────(vi
 Déjà en place (à compléter/valider) : UptimeRobot, Sentry, Grafana Loki.
 
 Reste à faire :
+
 - [ ] Valider que les logs winston-loki arrivent correctement dans Loki
 - [ ] Valider que Sentry capture bien les erreurs NestJS
-- [ ] Métriques Prometheus : vérifier/compléter (`@willsoto/nestjs-prometheus`, latence, erreurs par route)
+- [x] Métriques Prometheus : `@willsoto/nestjs-prometheus` — `/metrics` endpoint, histogram latence + counter par route
 - [ ] Plugin datasource **GitHub** dans Grafana (CI failures)
-- [ ] Coverage trend : step CI qui pousse le % vers Grafana Metrics API
+- [x] Coverage trend : step CI qui pousse le % vers Grafana Metrics API (`grafana-metrics-enabled` dans node-validate.yml)
 - [ ] Dashboard final avec tous les panels (logs, errors, métriques, CI, coverage)
 
 Panels cibles :
+
 - Logs en temps réel (Loki, filtrable par app)
 - Error rate (Sentry)
 - Latence API P50/P95 (Prometheus)
@@ -186,11 +199,11 @@ Panels cibles :
 
 Une fois la config api validée et satisfaisante :
 
-| App | Logs | Sentry SDK | Spécificités |
-|---|---|---|---|
-| `nina.fm-faceb` | à définir (Nuxt server logs ?) | `@sentry/nuxt` | SSR + client |
-| `nina.fm-website` | à définir (Nuxt server logs ?) | `@sentry/nuxt` | SSR + client |
-| `nina.fm-mixtaper` | N/A (SPA pure) | `@sentry/solidjs` | client uniquement |
+| App                | Logs                           | Sentry SDK        | Spécificités      |
+| ------------------ | ------------------------------ | ----------------- | ----------------- |
+| `nina.fm-faceb`    | à définir (Nuxt server logs ?) | `@sentry/nuxt`    | SSR + client      |
+| `nina.fm-website`  | à définir (Nuxt server logs ?) | `@sentry/nuxt`    | SSR + client      |
+| `nina.fm-mixtaper` | N/A (SPA pure)                 | `@sentry/solidjs` | client uniquement |
 
 > Les panels Grafana sont déjà prêts côté dashboard — il suffit d'ajouter les datasources et les labels `app` correspondants.
 

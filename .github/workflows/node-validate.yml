@@ -27,8 +27,18 @@ on:
         description: 'Only upload coverage on this branch'
         type: string
         default: 'main'
+      grafana-metrics-enabled:
+        description: 'Push coverage trend to Grafana Cloud'
+        type: boolean
+        default: false
     secrets:
       CODECOV_TOKEN:
+        required: false
+      GRAFANA_METRICS_URL:
+        required: false
+      GRAFANA_METRICS_USER:
+        required: false
+      GRAFANA_METRICS_TOKEN:
         required: false
 
 jobs:
@@ -74,3 +84,17 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ${{ inputs.lcov-path }}
           fail_ci_if_error: false
+
+      - name: Push coverage trend to Grafana
+        if: inputs.grafana-metrics-enabled && github.ref == format('refs/heads/{0}', inputs.upload-on-branch)
+        env:
+          GRAFANA_METRICS_URL: ${{ secrets.GRAFANA_METRICS_URL }}
+          GRAFANA_METRICS_USER: ${{ secrets.GRAFANA_METRICS_USER }}
+          GRAFANA_METRICS_TOKEN: ${{ secrets.GRAFANA_METRICS_TOKEN }}
+        run: |
+          COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+          curl -sf -u "${GRAFANA_METRICS_USER}:${GRAFANA_METRICS_TOKEN}" \
+            -X POST "${GRAFANA_METRICS_URL}" \
+            -H "Content-Type: text/plain" \
+            --data-binary "test_coverage,app=${{ github.event.repository.name }} value=${COVERAGE}" \
+            || echo "Grafana metrics push failed (non-blocking)"
