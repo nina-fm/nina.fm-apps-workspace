@@ -42,7 +42,7 @@ on:
         required: false
 
 jobs:
-  validate:
+  common:
     runs-on: ubuntu-latest
     env:
       HUSKY: '0'
