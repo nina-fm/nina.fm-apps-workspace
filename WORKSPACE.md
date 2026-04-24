@@ -128,7 +128,6 @@ Configurés dans `.mcp.json` :
 | ------------ | ------------------------------------------------------------------------ |
 | `filesystem` | Accès à `~/Sites/nina/nina.fm-apps-workspace` pour navigation cross-repo |
 | `github`     | Branches, PRs, reviews (nécessite `GITHUB_PERSONAL_ACCESS_TOKEN`)        |
-| `context7`   | Docs à jour : SolidJS, NestJS, TypeORM, Vite, Vitest                     |
 
 ---
 
@@ -250,7 +249,6 @@ export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxxx
 # 6. Installer les MCPs (la première fois)
 npx -y @modelcontextprotocol/server-filesystem --help
 npx -y @modelcontextprotocol/server-github --help
-npx -y @upstash/context7-mcp --help
 ```
 
 ---
