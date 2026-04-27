@@ -39,7 +39,7 @@ Après toute correction ou erreur détectée : mettre à jour `.claude/rules/les
 
 ## Workflow Git & GitHub
 
-- **Merger une PR** : `mcp__github__merge_pull_request` avec `merge_method: "squash"` — jamais `git merge` + `git push`
+- **Merger une PR** : `gh pr merge --squash --delete-branch <numéro>` — jamais `git merge` + `git push`
 - **Squash merge** sur `main` — un commit par PR, historique propre
 - **Changeset obligatoire** avant tout merge `feat:` ou `fix:` — créer `.changeset/nom.md` manuellement (jamais `pnpm changeset`, interactif)
 - **Sync avant de tirer une branche** : `git pull origin main` puis `git checkout -b`

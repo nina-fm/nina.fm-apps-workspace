@@ -9,11 +9,10 @@ description: Leçons apprises — workspace Nina.fm (chargé automatiquement dan
 - Ne jamais mettre `[skip ci]` sur un commit de changeset dans une PR — le squash merge propage le tag et skippa la CI au merge
 
 ## Workflow PR (ordre obligatoire)
-- plan mode → branche (`git pull origin main && git checkout -b`) → code → changeset (chaque repo `feat:`/`fix:`) → commit → `git push -u origin <branch>` → PR via `mcp__github__create_pull_request` → review si demandée
-- Toujours `push -u` (pas juste `push`) — sans upstream, GitHub MCP ne trouve pas la branche pour créer la PR
+- plan mode → branche (`git pull origin main && git checkout -b`) → code → changeset (chaque repo `feat:`/`fix:`) → commit → `git push -u origin <branch>` → PR via `gh pr create` → review si demandée
+- Toujours `push -u` (pas juste `push`) — sans upstream, `gh pr create` échoue
 - Jamais de modifs sur `main` directement
-- Jamais déléguer la création de PR à un agent (il utilisera `gh pr create`)
-- Merge : toujours `mcp__github__merge_pull_request` avec `merge_method: "squash"`
+- Merge : `gh pr merge --squash --delete-branch <numéro>`
 
 ## CI — Reusable Workflows
 - Pour tout ajout de step CI non-trivial : toujours se demander si ça mérite un reusable workflow (`workflow_call`) partagé dans `.github/workflows/` du repo concerné ou dans un repo `.github` dédié
