@@ -39,9 +39,22 @@ Après toute correction ou erreur détectée : mettre à jour `.claude/rules/les
 
 ## Workflow Git & GitHub
 
+Ordre : plan mode → `git pull origin main && git checkout -b` → code → changeset → commit → `git push -u origin <branch>` → `gh pr create` → review si demandée
+
 - **Merger une PR** : `gh pr merge --squash --delete-branch <numéro>` — jamais `git merge` + `git push`
 - **Squash merge** sur `main` — un commit par PR, historique propre
-- **Changeset obligatoire** avant tout merge `feat:` ou `fix:` — créer `.changeset/nom.md` manuellement (jamais `pnpm changeset`, interactif)
+- **Changeset obligatoire** avant tout merge `feat:` ou `fix:` — créer `.changeset/nom.md` manuellement (jamais `pnpm changeset`, interactif) ; jamais `[skip ci]` sur ce commit (le squash propage le tag)
+- **Toujours `push -u`** (pas juste `push`) — sans upstream, `gh pr create` échoue
 - **Sync avant de tirer une branche** : `git pull origin main` puis `git checkout -b`
 - **Suppression automatique des branches** au merge (`delete_branch_on_merge` activé)
 - Conventions → `CLAUDE.md` du repo — jamais dans `~/.claude/` sauf préférences personnelles
+
+## CI — Reusable Workflows
+
+Pour tout ajout de step CI non-trivial, se demander si ça mérite un `workflow_call` partagé :
+- **Mutualiser** : même logique sur 2+ repos, ou step complexe à maintenir centralement
+- **Ne pas mutualiser** : step trivial (1-2 lignes), très spécifique au repo, pas de réutilisation prévisible
+
+## Types auto-générés
+
+`app/types/` et `src/types/api/` sont générés depuis OpenAPI — ne jamais modifier manuellement, corriger la source.
