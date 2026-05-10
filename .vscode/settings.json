@@ -6,9 +6,9 @@
     "source.fixAll.eslint": "explicit",
     "source.organizeImports": "never"
   },
-  "files.associations": {
-    "*.css": "tailwindcss"
-  },
+  // "files.associations": {
+  //   "*.css": "tailwindcss"
+  // },
   "editor.quickSuggestions": {
     "strings": "on"
   },
