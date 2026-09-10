@@ -48,6 +48,32 @@ Ordre : plan mode → `git pull origin main && git checkout -b` → code → cha
 - **Sync avant de tirer une branche** : `git pull origin main` puis `git checkout -b`
 - **Suppression automatique des branches** au merge (`delete_branch_on_merge` activé)
 - Conventions → `CLAUDE.md` du repo — jamais dans `~/.claude/` sauf préférences personnelles
+- **Après le merge d'une PR**, fusionner `main` dans les branches qui en descendent
+  et vérifier `.changeset/` : un changeset déjà publié **survit au merge** quand son
+  ajout et sa suppression ont eu lieu sur des branches distinctes (git voit « ajouté
+  chez moi, absent chez eux » et le garde). Le laisser rejouerait la même entrée de
+  changelog et un bump en trop. `npx changeset status` confirme ce qui sera publié
+- **Vérifier un run CI** : épingler l'identifiant (`gh run view <id>`). `gh run list --limit 1`
+  peut renvoyer un run **antérieur** tant que le nouveau n'est pas créé — on croit alors lire
+  le résultat de son propre push et on rapporte un succès qui n'a rien à voir
+
+## Consigner ce qu'on trouve — issues GitHub
+
+Un défaut trouvé en chemin qu'on ne corrige pas tout de suite va dans une
+**issue**, pas dans une description de PR : une PR mergée n'est plus lue, et
+le constat disparaît avec elle.
+
+Ouvrir une issue quand le sujet est **hors du périmètre** de ce qu'on fait,
+demande un **arbitrage produit**, ou appartient à un **autre repo**. Sinon on
+corrige sur-le-champ — une issue n'est pas un moyen d'éviter le travail.
+
+Une issue utile porte : le symptôme **mesuré** (chiffres, pas impressions), la
+cause si elle est connue, et les options avec leur coût quand il y a un choix
+à faire. Préciser où le défaut a été trouvé et s'il est antérieur au code
+courant — ça évite de rouvrir l'enquête.
+
+Le repo d'accueil est celui du **code fautif**, pas celui où le symptôme est
+apparu : un contrat d'API faux se consigne sur l'API.
 
 ## CI — Reusable Workflows
 
