@@ -33,13 +33,30 @@ Tester intelligemment, pas exhaustivement. Objectif : maintenabilité et non-ré
 
 Pour toute implémentation multi-étapes : utiliser le skill `/task` pour analyser et planifier, puis créer des tasks (TaskCreate) pour suivre la progression étape par étape.
 
+### Recette : avant de prendre un ticket, et avant de merger
+
+Deux recettes encadrent tout ticket, dans l'app réelle — pas seulement dans les tests :
+
+- **Recette de constat, avant de le prendre** : reproduire le défaut, ou constater
+  l'absence de la fonctionnalité, sur `main`. On vérifie que le ticket est pertinent
+  et toujours d'actualité ; un ticket qui ne se reproduit plus se commente et se
+  ferme, il ne s'implémente pas.
+- **Recette finale, avant de merger** : après l'implémentation, et de nouveau après
+  chaque passe de retours de review. Rejouer le scénario du constat, plus le chemin
+  nominal pour la non-régression. Les tests prouvent le code ; la recette prouve ce
+  que l'utilisateur voit et entend — un test peut passer avec et sans le correctif.
+
+Mesurer plutôt qu'observer (valeurs avant / après), et reporter les mesures dans la
+PR. Toute donnée créée pour la recette est retirée à la fin, état d'origine vérifié.
+Le protocole propre à chaque app vit dans son repo (ex. `/recette` dans mixtaper).
+
 ## Self-Improvement
 
 Après toute correction ou erreur détectée : mettre à jour `.claude/rules/lessons.md` du repo concerné (ou du workspace si transversal) avec la leçon en une ligne concise. Ne pas attendre que l'utilisateur le signale.
 
 ## Workflow Git & GitHub
 
-Ordre : plan mode → `git pull origin main && git checkout -b` → code → changeset → commit → `git push -u origin <branch>` → `gh pr create` → review si demandée
+Ordre : recette de constat → plan mode → `git pull origin main && git checkout -b` → code → recette finale → changeset → commit → `git push -u origin <branch>` → `gh pr create` → review si demandée → recette finale après retours → merge
 
 - **Merger une PR** : `gh pr merge --squash --delete-branch <numéro>` — jamais `git merge` + `git push`
 - **Squash merge** sur `main` — un commit par PR, historique propre
