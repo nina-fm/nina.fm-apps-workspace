@@ -1,7 +1,7 @@
 # Nina.fm Workspace
 
 Workspace de configuration Claude Code pour l'écosystème applicatif de Nina.fm.
-Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (CLAUDE.md, MCP, hooks, skills, memory).
+Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (CLAUDE.md, hooks, commandes, agents, rules).
 
 ---
 
@@ -65,7 +65,7 @@ cd ~/Sites/nina/nina.fm-apps-workspace/nina.fm-website && claude
 cd ~/Sites/nina/nina.fm-apps-workspace && claude
 ```
 
-En mode Mixtaper, le filesystem MCP donne accès à `nina.fm-api/` pour les features cross-repo.
+En mode Mixtaper, Claude lit `../nina.fm-api/` avec ses outils natifs pour les features cross-repo. Pour éviter la confirmation à chaque lecture, ajouter `Read(//<chemin absolu>/nina.fm-api/**)` dans son `settings.local.json`.
 
 ---
 
@@ -93,7 +93,7 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 - **Suppression automatique des branches au merge** : `delete_branch_on_merge` activé sur tous les repos GitHub nina-fm — à activer sur tout nouveau repo (GitHub Settings → General → "Automatically delete head branches")
 - **Sync avant de tirer une branche** : toujours `git pull origin main` avant `git checkout -b` — une branche tirée depuis un `main` en retard pollue le diff de la PR avec des fichiers obsolètes
 - **Squash merge** sur `main` / `master` — historique détaillé dans les PRs
-- **Merger une PR via MCP** : toujours utiliser `mcp__github__merge_pull_request` avec `merge_method: "squash"` — ne jamais merger manuellement avec `git merge` + `git push`, ce qui laisserait la PR ouverte sur GitHub et contournerait le processus de review
+- **Merger une PR** : toujours `gh pr merge --squash --delete-branch <numéro>` — ne jamais merger manuellement avec `git merge` + `git push`, ce qui laisserait la PR ouverte sur GitHub et contournerait le processus de review
 - **Stacked PRs** : une PR peut pointer vers la branche de la PR précédente pour avoir un diff cohérent. **Au moment du merge d'une PR dans `main`**, mettre immédiatement à jour les PRs qui la référençaient pour qu'elles pointent vers `main` (GitHub "Edit" ou `git rebase main`).
 - **Lint + type-check** : automatiques via hooks Claude Code à chaque édition
 
@@ -120,14 +120,9 @@ git commit -m "chore: release vX.Y.Z [skip ci]"
 
 ---
 
-## MCP Servers
+## GitHub
 
-Configurés dans `.mcp.json` :
-
-| MCP          | Rôle                                                                     |
-| ------------ | ------------------------------------------------------------------------ |
-| `filesystem` | Accès à `~/Sites/nina/nina.fm-apps-workspace` pour navigation cross-repo |
-| `github`     | Branches, PRs, reviews (nécessite `GITHUB_PERSONAL_ACCESS_TOKEN`)        |
+Aucun serveur MCP : branches, PRs, reviews, issues et Projects passent par la CLI `gh`, authentifiée une fois par `gh auth login`.
 
 ---
 
@@ -139,10 +134,12 @@ Configurés dans `.mcp.json` :
 ├── Makefile                           ← Commandes dev (make dev, make dev-*)
 ├── docker-compose.dev.yml             ← Compose global (inclut api + auth)
 ├── .gitignore                         ← Ignore les repos de code
-├── .mcp.json                          ← Config MCP partagée
 ├── setup.sh                           ← Script d'installation sur nouvelle machine
 └── .claude/
-    └── memory/                        ← Mémoire persistante (cross-session)
+    ├── commands/                      ← Skills disponibles à la racine du workspace
+    ├── agents/                        ← api-explorer
+    ├── rules/                         ← lessons.md
+    └── settings.json                  ← Hooks (garde .env)
 
 nina.fm-api/                           ← Repo NestJS (son propre git)
 ├── CLAUDE.md
@@ -242,13 +239,8 @@ cd nina.fm-api && pnpm install
 cd ../nina.fm-mixtaper && pnpm install
 # etc.
 
-# 5. Configurer le GITHUB_PERSONAL_ACCESS_TOKEN pour le MCP GitHub
-export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxxx
-# → Ajouter à ~/.zshrc ou ~/.bashrc pour persistance
-
-# 6. Installer les MCPs (la première fois)
-npx -y @modelcontextprotocol/server-filesystem --help
-npx -y @modelcontextprotocol/server-github --help
+# 5. Authentifier la CLI GitHub (PRs, issues, Projects)
+gh auth login
 ```
 
 ---

@@ -16,8 +16,9 @@ echo "📋 Vérification des prérequis..."
 command -v git >/dev/null 2>&1 || { echo "❌ git requis"; exit 1; }
 command -v node >/dev/null 2>&1 || { echo "❌ node requis (recommandé: via nvm)"; exit 1; }
 command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm requis (npm install -g pnpm)"; exit 1; }
+command -v gh >/dev/null 2>&1 || { echo "❌ gh requis (brew install gh)"; exit 1; }
 
-echo "✅ git, node, pnpm détectés"
+echo "✅ git, node, pnpm, gh détectés"
 
 # ── 2. Clonage des repos ────────────────────────────────────────────
 echo ""
@@ -63,24 +64,17 @@ for repo in "${REPOS[@]}"; do
   fi
 done
 
-# ── 5. GitHub Token ─────────────────────────────────────────────────
+# ── 5. GitHub CLI ───────────────────────────────────────────────────
 echo ""
-echo "🔑 GitHub Personal Access Token (MCP GitHub)"
-if [ -z "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
-  echo "  ⚠️  GITHUB_PERSONAL_ACCESS_TOKEN non défini"
-  echo "  → Ajouter dans ~/.zshrc : export GITHUB_PERSONAL_ACCESS_TOKEN=ghp_xxxx"
-  echo "  → Token requis pour le MCP GitHub (branches, PRs automatiques)"
+echo "🔑 GitHub CLI (PRs, issues, Projects)"
+if gh auth status >/dev/null 2>&1; then
+  echo "  ✅ gh authentifié"
 else
-  echo "  ✅ GITHUB_PERSONAL_ACCESS_TOKEN défini"
+  echo "  ⚠️  gh non authentifié"
+  echo "  → Lancer : gh auth login"
 fi
 
-# ── 6. MCPs ─────────────────────────────────────────────────────────
-echo ""
-echo "🔌 MCPs (Model Context Protocol)..."
-echo "  → Les MCPs seront installés automatiquement par Claude Code via npx"
-echo "  → Config dans: $WORKSPACE_DIR/.mcp.json"
-
-# ── 7. Git hooks (commitlint + lint-staged) ─────────────────────────
+# ── 6. Git hooks (commitlint + lint-staged) ─────────────────────────
 echo ""
 echo "🪝 Git hooks..."
 for repo in "${REPOS[@]}"; do
@@ -98,7 +92,7 @@ echo "✅ Setup terminé !"
 echo ""
 echo "Prochaines étapes manuelles :"
 echo "  1. Compléter les fichiers .env dans chaque repo"
-echo "  2. Configurer GITHUB_PERSONAL_ACCESS_TOKEN dans ~/.zshrc"
+echo "  2. Authentifier la CLI GitHub si besoin : gh auth login"
 echo "  3. Lancer les bases de données : voir nina.fm-api/docker-compose.yml"
 echo "  4. Lancer l'API : cd nina.fm-api && pnpm start:dev"
 echo "  5. Lancer Mixtaper : cd nina.fm-mixtaper && pnpm dev"
