@@ -1,0 +1,17 @@
+{
+  "description": "Garde .env : refuse la lecture des fichiers de secrets",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-env.sh\"",
+            "statusMessage": "Vérification accès .env..."
+          }
+        ]
+      }
+    ]
+  }
+}
