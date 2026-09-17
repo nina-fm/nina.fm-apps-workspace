@@ -33,8 +33,9 @@ show() {
   items=$(gh project item-list "$PROJECT" --owner "$OWNER" --format json --limit 200 2>/dev/null) || exit 0
   jq -r '"Plan \(.title) — \(.url)"' <<<"$project"
   jq -r --arg eau "Au fil de l'eau" --arg repo "$(current_repo)" '
-    def ref: (.content.repository | sub("^nina-fm/nina\\.fm-"; "")) as $r
-      | (if $r == $repo then "" else $r end) + "#" + (.content.number | tostring);
+    def ref: if .content.repository == null then "[brouillon]"
+      else (.content.repository | sub("^nina-fm/nina\\.fm-"; "")) as $r
+        | (if $r == $repo then "" else $r end) + "#" + (.content.number | tostring) end;
     def epic: (.labels // []) | index("epic") != null;
     def line: "  - " + ref + (if epic then " [epic]" else "" end) + " " + .content.title
       + (if .status == "In Progress" then " (en cours)" else "" end);
@@ -50,7 +51,7 @@ show() {
 }
 
 add() {
-  local url=$1 horizon=$2 fields pid item status_f todo horizon_f opt
+  local url=$1 horizon=$2 fields project pid item status_f todo horizon_f opt
   fields=$(gh project field-list "$PROJECT" --owner "$OWNER" --format json)
   opt=$(jq -r --arg h "$horizon" '.fields[] | select(.name == "Horizon") | .options[] | select(.name == $h) | .id' <<<"$fields")
   if [ -z "$opt" ]; then
@@ -60,12 +61,15 @@ add() {
   horizon_f=$(jq -r '.fields[] | select(.name == "Horizon") | .id' <<<"$fields")
   status_f=$(jq -r '.fields[] | select(.name == "Status") | .id' <<<"$fields")
   todo=$(jq -r '.fields[] | select(.name == "Status") | .options[] | select(.name == "Todo") | .id' <<<"$fields")
-  pid=$(gh project view "$PROJECT" --owner "$OWNER" --format json --jq .id)
+  project=$(gh project view "$PROJECT" --owner "$OWNER" --format json)
+  pid=$(jq -r .id <<<"$project")
 
   item=$(gh project item-add "$PROJECT" --owner "$OWNER" --url "$url" --format json --jq .id)
   gh project item-edit --project-id "$pid" --id "$item" --field-id "$status_f" --single-select-option-id "$todo" >/dev/null
   gh project item-edit --project-id "$pid" --id "$item" --field-id "$horizon_f" --single-select-option-id "$opt" >/dev/null
-  echo "$url → $horizon"
+  # Le Project visé est nommé : NINA_PROJECT vaut pour toute commande de la session,
+  # y compris dans un sous-repo du workspace
+  echo "$url → $horizon (Project $PROJECT $(jq -r .title <<<"$project"))"
 }
 
 case "${1:-show}" in

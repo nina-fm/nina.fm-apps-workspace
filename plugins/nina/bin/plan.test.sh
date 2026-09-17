@@ -17,13 +17,14 @@ cat >"$work/bin/gh" <<'EOF'
 #!/usr/bin/env bash
 echo "$*" >>"$GH_CALLS"
 [ -z "${GH_FAIL:-}" ] || exit 1
-case "$1 $2" in
-  "project view") out='{"id":"PVT_1","title":"Mixtaper","url":"https://github.com/orgs/nina-fm/projects/1"}' ;;
-  "project item-list") out=$(cat "$GH_ITEMS") ;;
-  "project field-list") out='{"fields":[
+case "$1 $2 $3" in
+  "project view 1") out='{"id":"PVT_1","title":"Mixtaper","url":"https://github.com/orgs/nina-fm/projects/1"}' ;;
+  "project view 2") out='{"id":"PVT_2","title":"Apps Workspace","url":"https://github.com/orgs/nina-fm/projects/2"}' ;;
+  "project item-list "*) out=$(cat "$GH_ITEMS") ;;
+  "project field-list "*) out='{"fields":[
     {"id":"F_status","name":"Status","options":[{"id":"O_todo","name":"Todo"},{"id":"O_done","name":"Done"}]},
     {"id":"F_horizon","name":"Horizon","options":[{"id":"O_now","name":"Maintenant"},{"id":"O_next","name":"Ensuite"}]}]}' ;;
-  "project item-add") out='{"id":"ITEM_1"}' ;;
+  "project item-add "*) out='{"id":"ITEM_1"}' ;;
   *) out='' ;;
 esac
 jq_filter=""
@@ -42,6 +43,7 @@ cat >"$work/items.json" <<'EOF'
   {"status":"Todo","horizon":"Maintenant","content":{"repository":"nina-fm/nina.fm-api","number":56,"title":"Contrat API"}},
   {"status":"Done","horizon":"Maintenant","content":{"repository":"nina-fm/nina.fm-mixtaper","number":1,"title":"Terminée"}},
   {"status":"Todo","horizon":"Ensuite","content":{"repository":"nina-fm/nina.fm-mixtaper","number":39,"title":"Suite"}},
+  {"status":"Todo","horizon":"Ensuite","content":{"type":"DraftIssue","title":"Idée en vrac","body":""}},
   {"status":"Todo","horizon":"Plus tard","content":{"repository":"nina-fm/nina.fm-mixtaper","number":40,"title":"Plus tard"}},
   {"status":"Todo","horizon":"Au fil de l'eau","content":{"repository":"nina-fm/nina.fm-mixtaper","number":41,"title":"Fil"}},
   {"status":"Todo","content":{"repository":"nina-fm/nina.fm-mixtaper","number":42,"title":"Oubliée"}}
@@ -77,6 +79,7 @@ Maintenant :
   - api#56 Contrat API
 Ensuite :
   - #39 Suite
+  - [brouillon] Idée en vrac
 Plus tard : 1 · Différé : 0 · Au fil de l'eau : 1
 Sans horizon : 1 — à ranger"
 [[ $code -eq 0 && "$out" == "$expected" ]] || fail "affichage : attendu
@@ -94,10 +97,10 @@ run add https://github.com/nina-fm/nina.fm-mixtaper/issues/70 Jamais
 [[ $code -eq 1 && "$err" == *"attendu : Maintenant, Ensuite"* ]] || fail "add horizon inconnu : attendu code 1 et la liste des horizons, obtenu code $code, erreur « $err »"
 
 run add https://github.com/nina-fm/nina.fm-mixtaper/issues/70 Ensuite
-[[ $code -eq 0 ]] || fail "add : attendu code 0, obtenu $code, erreur « $err »"
+[[ $code -eq 0 && "$out" == "https://github.com/nina-fm/nina.fm-mixtaper/issues/70 → Ensuite (Project 2 Apps Workspace)" ]] || fail "add : attendu code 0 et le Project visé nommé, obtenu code $code, sortie « $out », erreur « $err »"
 grep -q -- "project item-add 2 --owner nina-fm --url https://github.com/nina-fm/nina.fm-mixtaper/issues/70" "$GH_CALLS" || fail "add : l'issue n'est pas ajoutée au Project 2"
-grep -q -- "--id ITEM_1 --field-id F_status --single-select-option-id O_todo" "$GH_CALLS" || fail "add : Status Todo non posé"
-grep -q -- "--id ITEM_1 --field-id F_horizon --single-select-option-id O_next" "$GH_CALLS" || fail "add : Horizon Ensuite non posé"
+grep -q -- "--project-id PVT_2 --id ITEM_1 --field-id F_status --single-select-option-id O_todo" "$GH_CALLS" || fail "add : Status Todo non posé"
+grep -q -- "--project-id PVT_2 --id ITEM_1 --field-id F_horizon --single-select-option-id O_next" "$GH_CALLS" || fail "add : Horizon Ensuite non posé"
 
 if [[ $failures -gt 0 ]]; then
   echo "$failures cas en échec"

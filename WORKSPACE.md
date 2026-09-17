@@ -133,7 +133,7 @@ L'outillage Claude commun aux repos vit dans un plugin interne, `plugins/nina/`,
 Contenu actuel :
 
 - **Garde `.env`** : un hook `PreToolUse` sur `Read|Glob` qui refuse les fichiers `.env*` sauf `.env.example`.
-- **Plan** : `bin/plan.sh` affiche le Project GitHub du repo, via un hook `SessionStart` (`startup|clear|compact`). Le numéro du Project vient de `NINA_PROJECT`, posé dans le `env` du `.claude/settings.json` du repo (`2` pour le workspace) ; le titre vient du Project. Sans `NINA_PROJECT`, sans `gh` ou hors ligne, le script reste muet. `bin/` du plugin est dans le PATH d'une session : `plan.sh add <url> <Horizon>` range une issue dans le Project (Status Todo et son Horizon).
+- **Plan** : `bin/plan.sh` affiche le Project GitHub du repo, via un hook `SessionStart` (`startup|clear|compact`). Le numéro du Project vient de `NINA_PROJECT`, posé dans le `env` du `.claude/settings.json` du repo (`2` pour le workspace) ; le titre vient du Project. Sans `NINA_PROJECT`, sans `gh` ou hors ligne, le script reste muet. `bin/` du plugin est dans le PATH d'une session : `plan.sh add <url> <Horizon>` range une issue dans le Project (Status Todo et son Horizon), et nomme le Project visé. Une session garde le `NINA_PROJECT` du repo où elle a été lancée, même dans un sous-repo : depuis le workspace, une issue Mixtaper se range avec `NINA_PROJECT=1 plan.sh add …`.
 
 **Activation** dans un repo, via son `.claude/settings.json` :
 
