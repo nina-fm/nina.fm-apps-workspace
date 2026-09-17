@@ -142,12 +142,13 @@ Contenu actuel :
   "extraKnownMarketplaces": {
     "nina.fm": { "source": { "source": "github", "repo": "nina-fm/nina.fm-apps-workspace" } }
   },
-  "enabledPlugins": { "nina@nina.fm": true },
-  "env": { "NINA_PROJECT": "1" }
+  "enabledPlugins": { "nina@nina.fm": true }
 }
 ```
 
-`env.NINA_PROJECT` seulement si le repo a un Project (`gh project list --owner nina-fm`).
+Ce bloc est le même partout. Ne pas y recopier le `env` du `settings.json` du workspace : `NINA_PROJECT` est propre à chaque repo.
+
+**Project du repo**, à part de l'activation : `"env": { "NINA_PROJECT": "<numéro>" }` seulement si le repo a **son propre** Project, dont il est le sujet. Valeurs : workspace `2` (Apps Workspace) ; mixtaper `1` (Mixtaper), posée par la PR mixtaper de #13. api, faceb, website et auth n'en ont pas. Qu'un de leurs tickets figure dans le Project 2 ou le Project 1 ne leur en donne pas un : sans `NINA_PROJECT`, rien ne s'affiche en début de session, et c'est voulu.
 
 **Installation**, une fois par repo et par machine : la déclaration ne suffit pas. L'ouverture d'une session, interactive ou `-p`, enregistre la marketplace sans aucune invite, mais n'installe pas le plugin. `/plugin` le montre alors en erreur (`Plugin "nina" not cached …`), et la garde reste inactive. Depuis le repo, une session ayant déjà été ouverte :
 
