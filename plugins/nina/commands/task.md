@@ -7,7 +7,7 @@ Analyser le code et présenter un plan d'implémentation détaillé pour : $ARGU
 
 ## Consignes
 
-Tu es en **mode plan** : explorer le code, comprendre le contexte, présenter un plan structuré. N'écrire aucun code avant que l'utilisateur ait approuvé le plan explicitement.
+Tu es en **mode plan** : explorer le code, comprendre le contexte, présenter un plan structuré. Ne rien modifier — ni code, ni fichier, ni branche — avant que l'utilisateur ait approuvé le plan explicitement.
 
 Tout ce que tu écris à l'utilisateur est en français, plan compris.
 
@@ -31,7 +31,15 @@ Si une issue ouverte la bloque, le dire et s'arrêter. Sinon, en tirer la tâche
 
 ### Étape 1 — Recette de constat
 
-Avant de prendre le ticket (voir « Recette » dans le `CLAUDE.md` du workspace) : reproduire le défaut, ou constater l'absence de la fonctionnalité, sur la branche par défaut. Suivre le protocole du repo s'il en a un (commande `/recette`, section du `CLAUDE.md`).
+Avant de prendre le ticket (voir « Recette » dans le `CLAUDE.md` du workspace) : reproduire le défaut, ou constater l'absence de la fonctionnalité, sur la branche par défaut à jour. Suivre le protocole du repo s'il en a un (commande `/recette`, section du `CLAUDE.md`).
+
+```bash
+DEFAULT=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
+git fetch origin "$DEFAULT"
+git rev-parse HEAD "origin/$DEFAULT"; git status --short
+```
+
+Si `HEAD` n'est pas `origin/$DEFAULT`, ou s'il reste des modifications, ne pas changer de branche : constater dans un worktree détaché (`git worktree add --detach <dossier temporaire> "origin/$DEFAULT"`), retiré à la fin du constat (`git worktree remove`).
 
 Mesurer plutôt qu'observer, et garder les valeurs pour la PR. Un ticket qui ne se reproduit plus se commente et se ferme : le dire à l'utilisateur, et s'arrêter.
 
@@ -57,7 +65,9 @@ Si le fichier existe, dérouler ses étapes maintenant. Chaque section de plan q
 
 ---
 
-### Étape 4 — Créer la branche
+### Étape 4 — Nommer la branche
+
+La branche est proposée dans le plan et créée seulement après approbation (étape 7).
 
 Choisir le type conventionnel :
 - préfixe de `$ARGUMENTS` s'il y en a un (`feat`, `fix`, `refactor`, `chore`, `docs`, `test`) ;
@@ -65,14 +75,6 @@ Choisir le type conventionnel :
 - sinon `feat`.
 
 Écrire le slug à la main, à partir du titre ou de la description : minuscules ASCII sans accents, mots séparés par des tirets, 50 caractères au plus, précédé du numéro pour une issue (`feat/14-commandes-communes-plugin`). Ne pas slugifier `#N` : on obtiendrait `feat/-14`.
-
-```bash
-DEFAULT=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
-git status --short    # s'il reste des modifications, le signaler avant de changer de branche
-git fetch origin "$DEFAULT" && git checkout --no-track -b <type>/<slug> "origin/$DEFAULT"
-```
-
-La branche part de `origin/$DEFAULT` fraîchement récupérée : c'est le « sync avant de tirer une branche », et ça marche aussi dans un worktree, où la branche par défaut est souvent déjà extraite ailleurs.
 
 ---
 
@@ -83,7 +85,7 @@ Structurer le plan **exactement** ainsi :
 ---
 
 **Tâche :** $ARGUMENTS
-**Branche :** `<type>/<slug>`
+**Branche proposée :** `<type>/<slug>`
 
 **Recette de constat :** [ce qui a été reproduit ou constaté, avec les mesures]
 
@@ -124,4 +126,18 @@ Terminer la réponse par exactement cette ligne :
 
 > ✅ Plan prêt — je lance l'implémentation ?
 
-N'écrire aucun code, ne créer aucun fichier et ne rien modifier avant que l'utilisateur ait approuvé (« go », « oui », « ok » ou équivalent).
+N'écrire aucun code, ne créer ni fichier ni branche, et ne rien modifier avant que l'utilisateur ait approuvé (« go », « oui », « ok » ou équivalent).
+
+---
+
+### Étape 7 — Après approbation : créer la branche
+
+Premier geste de l'implémentation, avec le nom retenu (corrigé s'il a été discuté) :
+
+```bash
+DEFAULT=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
+git status --short    # s'il reste des modifications, le signaler avant de changer de branche
+git fetch origin "$DEFAULT" && git checkout --no-track -b <type>/<slug> "origin/$DEFAULT"
+```
+
+La branche part de `origin/$DEFAULT` fraîchement récupérée : c'est le « sync avant de tirer une branche », et ça marche aussi dans un worktree, où la branche par défaut est souvent déjà extraite ailleurs.

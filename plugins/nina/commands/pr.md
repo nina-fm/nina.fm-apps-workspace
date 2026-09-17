@@ -22,13 +22,13 @@ echo "Branche : $BRANCH → $BASE"
 git fetch origin "$BASE"
 git status --short
 git log "origin/$BASE..HEAD" --oneline
-gh pr view "$BRANCH" --json url --jq .url 2>/dev/null   # une PR existe déjà ?
+gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url // empty'   # une PR ouverte existe déjà ?
 ```
 
 - Branche courante égale à `$BASE` : s'arrêter, une PR part d'une branche.
 - Aucun commit d'avance et rien à commiter : s'arrêter, il n'y a rien à proposer.
 - Modifications non commitées : demander à l'utilisateur s'il faut les commiter avant de continuer.
-- Une PR existe déjà : le dire, pousser la branche (étape 5) et donner son URL, sans en créer une autre.
+- Une PR ouverte existe déjà : le dire, pousser la branche (étape 5) et donner son URL, sans en créer une autre. Une PR fermée ou mergée sur le même nom de branche ne compte pas.
 
 ---
 
@@ -67,10 +67,16 @@ Lire les commits et le diff pour savoir ce que la PR contient.
 Seulement si le repo utilise Changesets (`.changeset/config.json` existe) ; sinon passer.
 
 - Commits `feat` ou `fix` : changeset **obligatoire**. `refactor` : `patch`. `chore`, `docs`, `test` seuls : aucun, sauf changement visible de l'utilisateur.
-- Ne compter que les changesets **ajoutés par la branche** : un changeset déjà publié peut survivre à un merge et traîner dans `.changeset/`.
+- Ne compter que les changesets **propres à la branche**. Un changeset déjà publié peut survivre au merge de `$BASE` dans la branche : il apparaît alors comme ajouté, mais `$BASE` l'a supprimé en le publiant. Celui-là se retire (`git rm`), il rejouerait l'entrée de changelog et le bump.
 
 ```bash
-git diff "origin/$BASE...HEAD" --name-only --diff-filter=A -- '.changeset/*.md'
+for f in $(git diff "origin/$BASE...HEAD" --name-only --diff-filter=A -- '.changeset/*.md'); do
+  if git log "origin/$BASE" --diff-filter=D --oneline -1 -- "$f" | grep -q .; then
+    echo "déjà publié : $f"
+  else
+    echo "propre à la branche : $f"
+  fi
+done
 jq -r .name package.json
 ```
 
