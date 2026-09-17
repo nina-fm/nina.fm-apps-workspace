@@ -28,7 +28,7 @@ gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url // empty'   #
 - Branche courante égale à `$BASE` : s'arrêter, une PR part d'une branche.
 - Aucun commit d'avance et rien à commiter : s'arrêter, il n'y a rien à proposer.
 - Modifications non commitées : demander à l'utilisateur s'il faut les commiter avant de continuer.
-- Une PR ouverte existe déjà : le dire, pousser la branche (étape 5) et donner son URL, sans en créer une autre. Une PR fermée ou mergée sur le même nom de branche ne compte pas.
+- Une PR ouverte existe déjà : lancer quand même les vérifications (étape 2), puis pousser la branche (étape 5), mettre à jour le corps de la PR s'il ne reflète plus les commits (`gh pr edit --body-file`), et donner son URL, sans en créer une autre. Une PR fermée ou mergée sur le même nom de branche ne compte pas.
 
 ---
 
