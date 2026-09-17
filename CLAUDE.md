@@ -5,6 +5,13 @@ Guidelines transversales pour tous les repos du workspace Nina.fm.
 > Chaque repo a son propre CLAUDE.md pour les conventions stack-spécifiques.
 > Voir `WORKSPACE.md` pour l'infrastructure, l'écosystème et le workflow git.
 
+## Langue
+
+Tout ce qui se lit s'écrit en français : issues, PR, messages de commit (après le
+préfixe conventionnel, `fix(transitions): aligner…`), changesets, docs, `CLAUDE.md`,
+commandes et commentaires de code. Les identifiants restent en anglais.
+L'historique ancien en anglais ne se réécrit pas ; ce qu'on touche passe en français.
+
 ## TypeScript
 
 - `strict: true` dans tous les repos — zéro `any` dans le nouveau code
