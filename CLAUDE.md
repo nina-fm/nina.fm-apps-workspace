@@ -105,6 +105,22 @@ Pour tout ajout de step CI non-trivial, se demander si ça mérite un `workflow_
 - **Mutualiser** : même logique sur 2+ repos, ou step complexe à maintenir centralement
 - **Ne pas mutualiser** : step trivial (1-2 lignes), très spécifique au repo, pas de réutilisation prévisible
 
-## Types auto-générés
+## Fichiers générés
 
-`app/types/` et `src/types/api/` sont générés depuis OpenAPI — ne jamais modifier manuellement, corriger la source.
+Un fichier généré ne se modifie jamais à la main : on corrige la source et on
+régénère (clients et schémas orval depuis OpenAPI, lockfiles).
+
+Chaque repo **déclare ses chemins générés** dans son `.gitattributes`, avec le
+marqueur `linguist-generated` :
+
+```gitattributes
+src/api/** linguist-generated=true
+src/api/fetcher.ts -linguist-generated   # écrit à la main, au milieu du généré
+```
+
+C'est la seule liste à jour : aucune autre ne la recopie, elles périmaient. GitHub
+s'en sert pour replier ces fichiers dans la vue PR, et `/nina:review` pour les
+écarter du diff qu'elle relit — leur contenu n'est pas un sujet de review, seul
+compte le fait qu'ils aient changé en cohérence avec leur source. Un fichier écrit
+à la main qui vit dans un dossier généré (le mutator `fetcher.ts` d'orval) se
+réinclut nommément, **après** la ligne qui l'exclut : la dernière qui matche gagne.
