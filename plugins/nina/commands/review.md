@@ -80,7 +80,7 @@ Parcourir les fichiers un à un, en appliquant les sections qui les concernent :
 #### Langue, livraison et recette
 - [ ] Commentaires, docs et messages en français ; identifiants en anglais
 - [ ] Commits conventionnels, description en français
-- [ ] Changeset présent si commits `feat` ou `fix` et que le repo utilise Changesets, sans `[skip ci]`
+- [ ] Changeset présent si commits `feat` ou `fix` et que le repo utilise Changesets, sans `[skip ci]` — à suggérer écrit à la main dans `.changeset/<nom>.md` (ou via `/nina:pr`), jamais `pnpm changeset`, qui est interactif
 - [ ] La PR rapporte la recette : scénario du constat et chemin nominal, mesures avant / après
 - [ ] Un défaut trouvé hors périmètre est consigné dans une issue, pas seulement dans la PR
 
