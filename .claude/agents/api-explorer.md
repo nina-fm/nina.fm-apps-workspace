@@ -93,8 +93,14 @@ fetch(buildApiUrl('/mix-sessions'), { credentials: 'include' })
 
 ## Types auto-générés
 
-Les types OpenAPI sont auto-générés dans les frontends :
-- `nina.fm-faceb/app/types/`
-- `nina.fm-mixtaper/src/types/api/`
-
+Chaque frontend génère son client et ses schémas depuis l'OpenAPI de cette API.
 Régénérer après modification d'endpoint : `pnpm types:sync` (API sur localhost:4000 requis).
+
+Ne pas recopier ici les chemins générés de chaque repo : ils changent, et la liste
+qui vivait à cet endroit nommait un dossier écrit à la main et un autre supprimé
+depuis. Chaque repo les déclare dans son `.gitattributes`, et c'est la seule liste
+à jour :
+
+```bash
+grep linguist-generated <repo>/.gitattributes
+```

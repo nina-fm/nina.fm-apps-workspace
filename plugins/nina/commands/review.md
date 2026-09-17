@@ -15,22 +15,19 @@ La review est rédigée en français.
 
 ### Étape 1 — Récupérer le diff
 
-**Avec un numéro de PR** (PR du repo courant) :
-
 ```bash
-gh pr view N --json title,body,url,baseRefName,headRefName,commits,files \
-  --jq '"\(.title)\n\(.url)\n\(.headRefName) → \(.baseRefName)\nFichiers : \(.files | length) | Commits : \(.commits | length)\n\n\(.body)"'
-gh pr diff N
+review-diff.sh        # la branche courante, contre la branche par défaut
+review-diff.sh N      # la PR N du repo courant
 ```
 
-**Sans numéro** (branche courante) :
+Un seul appel rend l'entête, les commits, le récapitulatif de **tous** les fichiers modifiés, la liste de ceux qui sont écartés, et le diff à relire.
+
+Le **contenu** des fichiers générés en est retiré — le repo les déclare `linguist-generated` dans son `.gitattributes`. Ce contenu n'est jamais un sujet de review, puisqu'on ne le modifie pas à la main ; le lire coûtait des dizaines de milliers de caractères, relus à chaque requête. Ce qui reste à vérifier sur eux est dans le récapitulatif : qu'ils aient changé, et en cohérence avec leur source. Si le script signale que le repo ne déclare aucun chemin généré, le dire dans la review.
+
+Avec un numéro de PR, lire aussi sa description, qui porte le contexte et la recette :
 
 ```bash
-BASE=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
-git fetch origin "$BASE"
-git diff "origin/$BASE...HEAD" --stat
-git diff "origin/$BASE...HEAD"
-git log "origin/$BASE..HEAD" --oneline
+gh pr view N --json title,body,url --jq '"\(.title)\n\(.url)\n\n\(.body)"'
 ```
 
 Lire aussi le `CLAUDE.md` du repo (et ses parents) : ses conventions font partie des critères.
@@ -62,7 +59,7 @@ Parcourir les fichiers un à un, en appliquant les sections qui les concernent :
 
 #### Réutilisation
 - [ ] Rien d'existant (hook, composable, service, composant, util) ne couvrait déjà le besoin
-- [ ] Aucun fichier généré modifié à la main (`app/types/`, `src/types/api/`, clients orval) : la source est corrigée
+- [ ] Aucun fichier généré modifié à la main — ceux que l'étape 1 a écartés : la source est corrigée, et le fichier régénéré. Les chemins générés sont ceux que le `.gitattributes` du repo déclare, pas une liste tenue ici
 
 #### Tests
 - [ ] La logique métier, les cas d'erreur et les régressions connues ont leurs tests
@@ -95,7 +92,7 @@ Mettre en forme **exactement** ainsi :
 ## Review
 
 **Branche :** `<branche>` → `<base>`
-**Fichiers modifiés :** [n] | **Commits :** [n]
+**Fichiers modifiés :** [n] | **Commits :** [n] | **Générés écartés du contenu :** [n]
 **Checklist du repo :** `.claude/checklists/review.md` appliquée | aucune
 **Verdict :** ✅ Prêt à merger | ⚠️ Points mineurs | ❌ Changements nécessaires
 
