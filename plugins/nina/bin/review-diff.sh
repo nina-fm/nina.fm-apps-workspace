@@ -10,12 +10,24 @@
 # d'office — ils sont générés partout, les déclarer n'apprendrait rien —, sauf si
 # le repo dit explicitement le contraire (`-linguist-generated`).
 #
+# Ces déclarations sont lues dans l'**arbre de travail**, jamais dans les commits
+# relus : une PR ancienne qui touche des chemins supprimés depuis est donc moins
+# bien filtrée, puisque plus rien ne les déclare.
+#
 # Les générés restent dans le récapitulatif et dans la liste des fichiers : ce qui
 # compte est qu'ils aient changé, et en cohérence avec leur source. Leur contenu,
 # lui, n'est jamais un sujet de review, puisque le CLAUDE.md du workspace interdit
 # de les modifier à la main. Le lire coûtait des dizaines de milliers de
 # caractères, relus à chaque requête de la review.
 set -euo pipefail
+
+# `core.quotePath=false` pour tous les git de ce script : sans lui, git échappe les
+# chemins non-ASCII (`"src/api/g\303\251n\303\251r\303\251s.ts"`). `check-attr`
+# résout quand même l'attribut, donc le fichier serait compté et annoncé comme
+# écarté — mais le pathspec bâti sur la chaîne échappée ne matcherait rien, et son
+# contenu resterait relu. Le rapport se contredirait, ce qui est pire que ne pas
+# filtrer. Posé ici plutôt qu'en `-c` sur chaque appel : trois endroits dériveraient.
+export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.quotePath GIT_CONFIG_VALUE_0=false
 
 LOCKFILES="pnpm-lock.yaml package-lock.json yarn.lock"
 
@@ -54,32 +66,36 @@ fi
 
 range="$base_sha...$head"
 changed=$(git diff --name-only "$range")
+total=$(printf '%s\n' "$changed" | grep -c . || true)
+
+echo "Review de $label → $base"
+if [ "$total" -eq 0 ]; then
+  echo "Rien à relire : aucun fichier ne diffère entre $base et cette $label."
+  echo "Vérifier le numéro de PR, ou que la branche porte bien des commits."
+  exit 0
+fi
 
 # `git check-attr` rend « set » pour un attribut nu, « true » pour une valeur
 # explicite, « unset » pour une exclusion : n'en reconnaître qu'un seul écarterait
 # la moitié des repos en silence, sans que rien ne le signale.
 generated=()
-if [ -n "$changed" ]; then
-  while IFS= read -r line; do
-    file=${line%%: linguist-generated:*}
-    case "$line" in
-      *": linguist-generated: set"|*": linguist-generated: true")
-        generated+=("$file") ;;
-      *": linguist-generated: unset")
-        : ;;  # le repo l'a explicitement dit relisible : sa déclaration prime
-      *)
-        is_lockfile "$file" && generated+=("$file") ;;
-    esac
-  done < <(printf '%s\n' "$changed" | git check-attr --stdin linguist-generated)
-fi
+while IFS= read -r line; do
+  file=${line%%: linguist-generated:*}
+  case "$line" in
+    *": linguist-generated: set"|*": linguist-generated: true")
+      generated+=("$file") ;;
+    *": linguist-generated: unset")
+      : ;;  # le repo l'a explicitement dit relisible : sa déclaration prime
+    *)
+      is_lockfile "$file" && generated+=("$file") ;;
+  esac
+done < <(printf '%s\n' "$changed" | git check-attr --stdin linguist-generated)
 
 excludes=()
 for file in ${generated[@]+"${generated[@]}"}; do
   excludes+=(":(literal,exclude)$file")
 done
 
-total=$(printf '%s\n' "$changed" | grep -c . || true)
-echo "Review de $label → $base"
 echo "Fichiers modifiés : $total | Écartés du contenu, car générés : ${#generated[@]}"
 
 echo
@@ -98,10 +114,14 @@ if [ ${#generated[@]} -gt 0 ]; then
 else
   echo "Aucun."
 fi
-if ! grep -q linguist-generated "$(git rev-parse --show-toplevel)/.gitattributes" 2>/dev/null; then
+# Tous les `.gitattributes` du repo, pas seulement celui de la racine : `check-attr`
+# honore aussi ceux des sous-dossiers, et un repo qui déclare là se serait entendu
+# dire qu'il ne déclare rien.
+if ! git ls-files -- '*.gitattributes' '.gitattributes' \
+  | xargs -r grep -l linguist-generated >/dev/null 2>&1; then
   echo "Ce repo ne déclare aucun chemin généré. Pour en déclarer, dans son .gitattributes :"
-  echo "  src/api/** linguist-generated=true"
-  echo "  src/api/fetcher.ts -linguist-generated   # écrit à la main, au milieu du généré"
+  echo "  <dossier généré>/** linguist-generated=true"
+  echo "  <dossier généré>/fetcher.ts -linguist-generated   # écrit à la main, au milieu du généré"
 fi
 
 echo

@@ -40,14 +40,16 @@ fixture() {
   mkdir -p "$repo/src/api/model"
   printf '%s\n' "$1" >"$repo/.gitattributes"
   [ -s "$repo/.gitattributes" ] || rm "$repo/.gitattributes"
-  for f in src/api/ninaFmApi.ts src/api/model/x.ts src/api/fetcher.ts src/real.ts pnpm-lock.yaml; do
+  # `src/api/générés.ts` porte un nom non-ASCII : git l'échappe dans
+  # `--name-only`, et l'exclusion bâtie sur la chaîne échappée ne porterait pas
+  for f in src/api/ninaFmApi.ts src/api/model/x.ts "src/api/générés.ts" src/api/fetcher.ts src/real.ts pnpm-lock.yaml; do
     printf 'origine\n' >"$repo/$f"
   done
   git -C "$repo" add -A
   git -C "$repo" -c user.email=t@t -c user.name=t commit -qm "socle"
   git -C "$repo" push -q origin main
   git -C "$repo" rev-parse HEAD >"$PR_BASE"   # la base d'époque, que sert le faux gh
-  for f in src/api/ninaFmApi.ts src/api/model/x.ts src/api/fetcher.ts src/real.ts pnpm-lock.yaml; do
+  for f in src/api/ninaFmApi.ts src/api/model/x.ts "src/api/générés.ts" src/api/fetcher.ts src/real.ts pnpm-lock.yaml; do
     printf 'modifie\n' >>"$repo/$f"
   done
   git -C "$repo" add -A
@@ -74,6 +76,13 @@ contenu_relu src/api/ninaFmApi.ts && fail "marqué =true : le contenu du génér
 contenu_relu src/api/model/x.ts && fail "marqué =true : le contenu d'un généré en sous-dossier est relu"
 contenu_relu src/real.ts || fail "marqué =true : le contenu du fichier à relire manque"
 
+# --- should écarter aussi un généré au nom non-ASCII ---------------------------
+# Sans `core.quotePath=false`, git rend `"src/api/g\303\251n..."` : le fichier est
+# annoncé comme écarté, mais l'exclusion ne porte pas et son contenu reste relu.
+contenu_relu 'src/api/générés.ts' && fail "nom non-ASCII : annoncé écarté, mais son contenu est relu"
+ecartes=$(printf '%s' "$out" | sed -n '/^--- Fichiers générés/,/^--- Diff à relire/p')
+grep -q 'src/api/générés.ts' <<<"$ecartes" || fail "nom non-ASCII : le fichier n'est pas nommé, ou l'est sous sa forme échappée"
+
 # --- should reconnaître aussi un attribut nu (set), pas seulement la valeur true
 fixture 'src/api/** linguist-generated'
 run
@@ -99,12 +108,12 @@ contenu_relu pnpm-lock.yaml || fail "lockfile explicitement relisible : la décl
 fixture 'src/api/** linguist-generated=true'
 run
 recap=$(printf '%s' "$out" | sed -n '/^--- Récapitulatif, tous fichiers ---$/,/^--- Fichiers générés/p')
-for f in src/api/ninaFmApi.ts src/api/model/x.ts src/real.ts pnpm-lock.yaml; do
+for f in src/api/ninaFmApi.ts src/api/model/x.ts 'src/api/générés.ts' src/real.ts pnpm-lock.yaml; do
   grep -q "$f" <<<"$recap" || fail "récapitulatif : $f manque, alors qu'il a changé"
 done
-# 4 écartés : les trois de src/api/ plus le lockfile, écarté sans déclaration
-[[ "$out" == *"Fichiers modifiés : 5 | Écartés du contenu, car générés : 4"* ]] \
-  || fail "entête : comptes attendus « 5 » et « 4 », obtenu « $(grep -m1 'Fichiers modifiés' <<<"$out") »"
+# 5 écartés : les quatre de src/api/ plus le lockfile, écarté sans déclaration
+[[ "$out" == *"Fichiers modifiés : 6 | Écartés du contenu, car générés : 5"* ]] \
+  || fail "entête : comptes attendus « 6 » et « 5 », obtenu « $(grep -m1 'Fichiers modifiés' <<<"$out") »"
 
 # --- should nommer les fichiers écartés ---------------------------------------
 ecartes=$(printf '%s' "$out" | sed -n '/^--- Fichiers générés/,/^--- Diff à relire/p')
@@ -141,7 +150,17 @@ git -C "$work/repo" push -q origin HEAD:main
 git -C "$work/repo" fetch -q origin
 run 42
 contenu_relu src/real.ts || fail "PR mergée sans squash : le diff est vide, la base d'époque n'est pas celle utilisée"
-[[ "$out" == *"Fichiers modifiés : 5"* ]] || fail "PR mergée sans squash : comptes attendus « 5 », obtenu « $(grep -m1 'Fichiers modifiés' <<<"$out") »"
+[[ "$out" == *"Fichiers modifiés : 6"* ]] || fail "PR mergée sans squash : comptes attendus « 6 », obtenu « $(grep -m1 'Fichiers modifiés' <<<"$out") »"
+
+# --- should dire qu'il n'y a rien à relire, plutôt que de rendre du vide -------
+# Un diff vide sans un mot est le mode de défaillance que ce script corrige :
+# mauvais numéro de PR, branche déjà mergée, branche sans commit.
+fixture 'src/api/** linguist-generated=true'
+git -C "$work/repo" reset -q --hard origin/main
+run
+[[ $code -eq 0 ]] || fail "rien à relire : attendu code 0, obtenu $code, erreur « $err »"
+[[ "$out" == *"Rien à relire"* ]] || fail "rien à relire : le script n'en dit rien, sortie « $out »"
+[[ "$out" != *"--- Diff à relire ---"* ]] || fail "rien à relire : des sections vides sont rendues quand même"
 
 # --- should refuser un argument qui n'est pas un numéro ------------------------
 run abc
