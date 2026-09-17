@@ -130,6 +130,8 @@ Aucun serveur MCP : branches, PRs, reviews, issues et Projects passent par la CL
 
 L'outillage Claude commun aux repos vit dans un plugin interne, `plugins/nina/`, servi par la marketplace `nina.fm` que déclare ce repo (`.claude-plugin/marketplace.json`).
 
+Avant de toucher aux hooks, aux commandes ou à `bin/` : `plugins/nina/LESSONS.md` réunit les pièges du chantier (sessions `claude -p`, recette d'un hook, refus du classifieur du mode auto). Ils sont là plutôt que dans `.claude/rules/`, qui est relu à chaque requête de chaque session.
+
 Contenu actuel :
 
 - **Garde `.env`** : un hook `PreToolUse` sur `Read|Glob` qui refuse les fichiers `.env*` sauf `.env.example`.
@@ -139,7 +141,7 @@ Contenu actuel :
 **Checklists du repo** : `.claude/checklists/review.md` et `.claude/checklists/task.md`, à la racine du repo (`git rev-parse --show-toplevel`). Chacune est facultative : la commande la lit si elle existe et s'en passe sinon. Elles sont hors de `.claude/rules/`, qui se charge à chaque session, car elles ne servent qu'à la commande.
 
 - **Contenu** : seulement ce que le tronc commun ne couvre pas — architecture cible, conventions du framework, dettes suivies. Ne pas y recopier la checklist commune (TypeScript, tests, sécurité, langue, changeset, recette), qui vit dans la commande.
-- **`review.md`** : des sections `#### <Domaine> (<fichiers visés>)` faites de cases `- [ ]`, en français. `/nina:review` les applique après les sections communes, aux fichiers qu'elles visent.
+- **`review.md`** : des sections `#### <Domaine> (<fichiers visés>)` faites de cases `- [ ]`, en français. `/nina:review` les applique après les sections communes, aux fichiers qu'elles visent. Écrire d'abord ce que la case vise, le glob ensuite : une case rangée sous un glob plus étroit que sa portée est sautée en silence (mixtaper#65). Ce qui vise tout le repo va dans une section sans glob.
 - **`task.md`** : des étapes de planification propres au repo (`### <Étape>`), déroulées par `/nina:task` après l'exploration du code. Une étape qui produit une section du plan donne son titre et son tableau (`#### Où va le code` et ses colonnes) : la section s'insère avant « Fichiers à créer ».
 
 ```markdown
