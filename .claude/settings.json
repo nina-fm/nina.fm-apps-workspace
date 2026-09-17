@@ -1,4 +1,7 @@
 {
+  "env": {
+    "NINA_PROJECT": "2"
+  },
   "extraKnownMarketplaces": {
     "nina.fm": {
       "source": {
