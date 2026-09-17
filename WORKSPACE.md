@@ -161,6 +161,14 @@ Ne pas passer par `claude plugin marketplace add` : la commande inscrit la marke
 
 **Distribution** : la marketplace est lue sur `main` depuis GitHub. Une modification du plugin n'atteint les repos qu'une fois mergée sur `main`. `plugin.json` ne porte pas de `version` : la version installée est le commit (`claude plugin list` affiche son SHA). Une `version` figerait le plugin tant qu'on oublierait de l'incrémenter.
 
+Le merge ne se propage pas seul (mesuré au merge de #21) : après une nouvelle session, le workspace était toujours en `e31ee2927ba8` et la copie locale de la marketplace sur l'ancien commit. Dans chaque repo, après un merge du plugin :
+
+```bash
+claude plugin update nina@nina.fm --scope project   # rafraîchit la marketplace, ne touche pas settings.json
+```
+
+La mise à jour ne vaut que pour le repo où on la lance, et prend effet à la session suivante.
+
 **Boucle de dev**, depuis le workspace, sur la branche en cours :
 
 ```bash
