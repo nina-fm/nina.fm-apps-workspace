@@ -134,6 +134,24 @@ Contenu actuel :
 
 - **Garde `.env`** : un hook `PreToolUse` sur `Read|Glob` qui refuse les fichiers `.env*` sauf `.env.example`.
 - **Plan** : `bin/plan.sh` affiche le Project GitHub du repo, via un hook `SessionStart` (`startup|clear|compact`). Le numéro du Project vient de `NINA_PROJECT`, posé dans le `env` du `.claude/settings.json` du repo (`2` pour le workspace) ; le titre vient du Project. Sans `NINA_PROJECT`, sans `gh` ou hors ligne, le script reste muet. `bin/` du plugin est dans le PATH d'une session : `plan.sh add <url> <Horizon>` range une issue dans le Project (Status Todo et son Horizon), et nomme le Project visé. Une session garde le `NINA_PROJECT` du repo où elle a été lancée, même dans un sous-repo : depuis le workspace, une issue Mixtaper se range avec `NINA_PROJECT=1 plan.sh add …`.
+- **Commandes communes** : `/nina:epic`, `/nina:task`, `/nina:pr`, `/nina:review` (`commands/`, voir « Commandes Disponibles »). Tronc commun à tous les repos : elles passent par `gh`, et déduisent ce qui se déduit — le repo (`gh repo view`, `{owner}/{repo}` dans `gh api`), la branche par défaut, le nom du package et les scripts de vérification (`package.json`), l'usage de Changesets (`.changeset/config.json`). Ce qui est propre à une stack vient de la checklist du repo.
+
+**Checklists du repo** : `.claude/checklists/review.md` et `.claude/checklists/task.md`, à la racine du repo (`git rev-parse --show-toplevel`). Chacune est facultative : la commande la lit si elle existe et s'en passe sinon. Elles sont hors de `.claude/rules/`, qui se charge à chaque session, car elles ne servent qu'à la commande.
+
+- **Contenu** : seulement ce que le tronc commun ne couvre pas — architecture cible, conventions du framework, dettes suivies. Ne pas y recopier la checklist commune (TypeScript, tests, sécurité, langue, changeset, recette), qui vit dans la commande.
+- **`review.md`** : des sections `#### <Domaine> (<fichiers visés>)` faites de cases `- [ ]`, en français. `/nina:review` les applique après les sections communes, aux fichiers qu'elles visent.
+- **`task.md`** : des étapes de planification propres au repo (`### <Étape>`), déroulées par `/nina:task` après l'exploration du code. Une étape qui produit une section du plan donne son titre et son tableau (`#### Où va le code` et ses colonnes) : la section s'insère avant « Fichiers à créer ».
+
+```markdown
+<!-- .claude/checklists/review.md -->
+#### Réactivité SolidJS (`.tsx`, `src/**/*.ts`)
+- [ ] Signaux lus comme des fonctions (`session()`, pas `session`)
+
+<!-- .claude/checklists/task.md -->
+### Où va le code
+Lire `docs/ARCHITECTURE.md` et placer chaque morceau de code avec sa table « Où va ce code ? ».
+Section du plan : `#### Où va le code`, tableau `| Code | Destination |`.
+```
 
 **Activation** dans un repo, via son `.claude/settings.json` :
 
@@ -198,9 +216,9 @@ claude plugin validate . && claude plugin validate plugins/nina   # structure
 │   └── nina/                          ← Plugin interne (voir « Plugin nina »)
 │       ├── .claude-plugin/plugin.json
 │       ├── bin/                       ← plan.sh et son test (dans le PATH des sessions)
+│       ├── commands/                  ← /nina:epic, /nina:task, /nina:pr, /nina:review
 │       └── hooks/                     ← hooks.json, garde .env et son test
 └── .claude/
-    ├── commands/                      ← Skills disponibles à la racine du workspace
     ├── agents/                        ← api-explorer
     ├── rules/                         ← lessons.md
     └── settings.json                  ← Activation du plugin nina, NINA_PROJECT=2
@@ -311,32 +329,34 @@ gh auth login
 
 ## Commandes Disponibles
 
-Disponibles dans chaque repo via `.claude/commands/` :
+Servies par le plugin nina dans tout repo qui l'active :
 
-| Commande              | Description                                                                                                                                                                                                                                                                |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/task "description"` | Analyse le codebase et crée un plan d'implémentation détaillé. Accepte un prefix Conventional Commit optionnel qui détermine le type de branche créée : `/task "feat: ..."`, `/task "fix: ..."`, `/task "refactor: ..."`, etc. Sans prefix, `feat` est utilisé par défaut. |
-| `/epic "description"` | Explore et décompose une grande feature en sous-features actionnables                                                                                                                                                                                                      |
-| `/pr`                 | Checks qualité finaux + création de la PR                                                                                                                                                                                                                                  |
-| `/review`             | Review IA du diff → commentaire structuré sur la PR                                                                                                                                                                                                                        |
-| `/sync-types`         | Regénère les types API depuis l'OpenAPI (mixtaper + faceb uniquement)                                                                                                                                                                                                      |
+| Commande                           | Description                                                                                                                                                                                                  |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/nina:task #N` ou `"description"` | Recette de constat, exploration, branche et plan d'implémentation. Avec une issue, lit ses commentaires, son epic et ses bloqueurs, et nomme la branche d'après son titre. Applique `.claude/checklists/task.md`. |
+| `/nina:epic #N` ou `"description"` | Explore et découpe une grande fonctionnalité ; une fois le découpage approuvé, crée les sous-issues, leurs dépendances, et les range dans le Project (`NINA_PROJECT`).                                       |
+| `/nina:pr`                         | Vérifications déduites de `package.json`, changeset si le repo utilise Changesets, push avec upstream, `gh pr create`.                                                                                       |
+| `/nina:review [N]`                 | Review du diff (PR `N` ou branche courante) avec la checklist commune et `.claude/checklists/review.md` ; avec `N`, publiée par `gh pr comment`.                                                              |
+| `/sync-types`                      | Regénère les types API depuis l'OpenAPI (mixtaper + faceb uniquement, commande locale au repo)                                                                                                               |
+
+Les copies locales `/task`, `/epic`, `/pr`, `/review` des repos disparaissent avec leurs issues de retrait (api#59, faceb#46, mixtaper#65, website#58).
 
 ## Workflow Agentique (rappel)
 
 ```
-1. /epic "grande feature"          (optionnel, si périmètre large)
-   → Décomposition en sous-features → tu valides
+1. /nina:epic "grande feature"     (optionnel, si périmètre large)
+   → Décomposition en sous-issues → tu valides → issues rangées dans le plan
 
-2. /task "description de la feature"
-   → Plan d'implémentation → tu valides / corriges
+2. /nina:task #N
+   → Recette de constat + plan d'implémentation → tu valides / corriges
 
 3. Agent implémente
    → Hooks qualité : lint + type-check automatiques à chaque édition
 
-4. /pr
-   → Qualité finale + création PR(s) sur les repos impactés
+4. /nina:pr
+   → Vérifications + création PR(s) sur les repos impactés
 
-5. /review
+5. /nina:review N
    → Review IA du diff → commentaire structuré sur la PR
 
 6. Tu valides la PR → merge → déploiement automatique (GitHub Actions)
