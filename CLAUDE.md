@@ -56,12 +56,12 @@ Après toute correction ou erreur détectée : mettre à jour `.claude/rules/les
 
 ## Workflow Git & GitHub
 
-Ordre : recette de constat → plan mode → `git pull origin main && git checkout -b` → code → recette finale → changeset → commit → `git push -u origin <branch>` → `gh pr create` → review si demandée → recette finale après retours → merge
+Ordre : recette de constat → plan mode → `git pull origin main && git checkout -b` → code → recette finale → changeset → commit → `git push --set-upstream origin <branch>` → `gh pr create` → review si demandée → recette finale après retours → merge
 
 - **Merger une PR** : `gh pr merge --squash --delete-branch <numéro>` — jamais `git merge` + `git push`
 - **Squash merge** sur `main` — un commit par PR, historique propre
 - **Changeset obligatoire** avant tout merge `feat:` ou `fix:` — créer `.changeset/nom.md` manuellement (jamais `pnpm changeset`, interactif) ; jamais `[skip ci]` sur ce commit (le squash propage le tag)
-- **Toujours `push -u`** (pas juste `push`) — sans upstream, `gh pr create` échoue
+- **Toujours `git push --set-upstream origin <branch>`** (pas juste `push`) — sans upstream, `gh pr create` échoue. Pas `-u` : rtk le retire et aucun upstream n'est posé, la forme longue passe
 - **Sync avant de tirer une branche** : `git pull origin main` puis `git checkout -b`
 - **Suppression automatique des branches** au merge (`delete_branch_on_merge` activé)
 - Conventions → `CLAUDE.md` du repo — jamais dans `~/.claude/` sauf préférences personnelles
