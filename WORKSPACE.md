@@ -130,7 +130,10 @@ Aucun serveur MCP : branches, PRs, reviews, issues et Projects passent par la CL
 
 L'outillage Claude commun aux repos vit dans un plugin interne, `plugins/nina/`, servi par la marketplace `nina.fm` que déclare ce repo (`.claude-plugin/marketplace.json`).
 
-Contenu actuel : la garde `.env`, un hook `PreToolUse` sur `Read|Glob` qui refuse les fichiers `.env*` sauf `.env.example`.
+Contenu actuel :
+
+- **Garde `.env`** : un hook `PreToolUse` sur `Read|Glob` qui refuse les fichiers `.env*` sauf `.env.example`.
+- **Plan** : `bin/plan.sh` affiche le Project GitHub du repo, via un hook `SessionStart` (`startup|clear|compact`). Le numéro du Project vient de `NINA_PROJECT`, posé dans le `env` du `.claude/settings.json` du repo (`2` pour le workspace) ; le titre vient du Project. Sans `NINA_PROJECT`, sans `gh` ou hors ligne, le script reste muet. `bin/` du plugin est dans le PATH d'une session : `plan.sh add <url> <Horizon>` range une issue dans le Project (Status Todo et son Horizon), et nomme le Project visé. Une session garde le `NINA_PROJECT` du repo où elle a été lancée, même dans un sous-repo : depuis le workspace, une issue Mixtaper se range avec `NINA_PROJECT=1 plan.sh add …`.
 
 **Activation** dans un repo, via son `.claude/settings.json` :
 
@@ -139,9 +142,12 @@ Contenu actuel : la garde `.env`, un hook `PreToolUse` sur `Read|Glob` qui refus
   "extraKnownMarketplaces": {
     "nina.fm": { "source": { "source": "github", "repo": "nina-fm/nina.fm-apps-workspace" } }
   },
-  "enabledPlugins": { "nina@nina.fm": true }
+  "enabledPlugins": { "nina@nina.fm": true },
+  "env": { "NINA_PROJECT": "1" }
 }
 ```
+
+`env.NINA_PROJECT` seulement si le repo a un Project (`gh project list --owner nina-fm`).
 
 **Installation**, une fois par repo et par machine : la déclaration ne suffit pas. L'ouverture d'une session, interactive ou `-p`, enregistre la marketplace sans aucune invite, mais n'installe pas le plugin. `/plugin` le montre alors en erreur (`Plugin "nina" not cached …`), et la garde reste inactive. Depuis le repo, une session ayant déjà été ouverte :
 
@@ -160,6 +166,7 @@ Ne pas passer par `claude plugin marketplace add` : la commande inscrit la marke
 ```bash
 claude --plugin-dir plugins/nina                                  # charge le plugin local
 bash plugins/nina/hooks/guard-env.test.sh                         # test de la garde .env
+bash plugins/nina/bin/plan.test.sh                                # test de plan.sh (gh simulé)
 claude plugin validate . && claude plugin validate plugins/nina   # structure
 ```
 
@@ -181,12 +188,13 @@ claude plugin validate . && claude plugin validate plugins/nina   # structure
 ├── plugins/
 │   └── nina/                          ← Plugin interne (voir « Plugin nina »)
 │       ├── .claude-plugin/plugin.json
+│       ├── bin/                       ← plan.sh et son test (dans le PATH des sessions)
 │       └── hooks/                     ← hooks.json, garde .env et son test
 └── .claude/
     ├── commands/                      ← Skills disponibles à la racine du workspace
     ├── agents/                        ← api-explorer
     ├── rules/                         ← lessons.md
-    └── settings.json                  ← Activation du plugin nina
+    └── settings.json                  ← Activation du plugin nina, NINA_PROJECT=2
 
 nina.fm-api/                           ← Repo NestJS (son propre git)
 ├── CLAUDE.md

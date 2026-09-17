@@ -1,5 +1,5 @@
 {
-  "description": "Garde .env : refuse la lecture des fichiers de secrets",
+  "description": "Garde .env : refuse la lecture des fichiers de secrets. Plan : affiche le Project GitHub du repo en début de session",
   "hooks": {
     "PreToolUse": [
       {
@@ -9,6 +9,19 @@
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-env.sh\"",
             "statusMessage": "Vérification accès .env..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/bin/plan.sh\"",
+            "timeout": 15,
+            "statusMessage": "Lecture du plan (Project GitHub)..."
           }
         ]
       }
