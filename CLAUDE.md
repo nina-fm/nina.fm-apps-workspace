@@ -38,7 +38,7 @@ Tester intelligemment, pas exhaustivement. Objectif : maintenabilité et non-ré
 
 ## Workflow d'implémentation
 
-Pour toute implémentation multi-étapes : utiliser le skill `/task` pour analyser et planifier, puis créer des tasks (TaskCreate) pour suivre la progression étape par étape.
+Pour toute implémentation multi-étapes : utiliser `/nina:task` pour analyser et planifier, puis créer des tasks (TaskCreate) pour suivre la progression étape par étape.
 
 ### Recette : avant de prendre un ticket, et avant de merger
 

@@ -1,6 +1,6 @@
 {
   "name": "nina",
-  "description": "Garde .env, plan du Project GitHub et outillage commun aux repos Nina.fm",
+  "description": "Garde .env, plan du Project GitHub et commandes communes (epic, task, pr, review) des repos Nina.fm",
   "author": {
     "name": "nina-fm"
   }
