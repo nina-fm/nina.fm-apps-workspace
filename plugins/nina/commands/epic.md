@@ -95,11 +95,13 @@ Ne créer aucune branche, n'écrire aucun code et ne pas lancer `/nina:task` de 
 
 Écrire chaque corps d'issue dans un fichier par heredoc à guillemets simples (`<<'EOF'`) et le passer avec `--body-file` : un corps passé en argument se casse sur les apostrophes et les backticks.
 
-1. **Issue epic** — la réutiliser si elle existe déjà ; sinon la créer avec le label `epic`. Tous les repos n'ont pas ce label : le créer s'il manque, avant `gh issue create`.
+1. **Issue epic** — la réutiliser si elle existe déjà ; sinon la créer avec le label `epic`. Son corps porte l'objectif, le constat, l'approche retenue et l'ordre suggéré (section « Découpage » datée si l'epic existait). Tous les repos n'ont pas le label : le créer s'il manque, avant `gh issue create`.
+
    ```bash
    gh label list -R nina-fm/<repo> --search epic --json name --jq '.[].name' | grep -qx epic \
      || gh label create epic -R nina-fm/<repo> --description "Grande fonctionnalité découpée en sous-issues"
-   ``` Son corps porte l'objectif, le constat, l'approche retenue et l'ordre suggéré (section « Découpage » datée si l'epic existait).
+   ```
+
 2. **Une issue par sous-fonctionnalité**, dans le repo du code qu'elle modifie (`nina.fm-api` pour le travail d'API). Corps : `Sous-issue de nina-fm/<repo>#<epic>`, puis Objectif, Constat (mesuré, daté, sur `main`), Périmètre, Recette.
 3. **Les rattacher comme sous-issues de l'epic, dans l'ordre suggéré** — avec l'`id` REST, pas le numéro :
    ```bash

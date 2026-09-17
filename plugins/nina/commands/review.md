@@ -40,10 +40,10 @@ Lire aussi le `CLAUDE.md` du repo (et ses parents) : ses conventions font partie
 ### Étape 2 — Checklist du repo
 
 ```bash
-cat "$(git rev-parse --show-toplevel)/.claude/checklists/review.md" 2>/dev/null
+ls "$(git rev-parse --show-toplevel)/.claude/checklists/review.md" 2>/dev/null
 ```
 
-Si le fichier existe, ses sections s'ajoutent à celles de l'étape 3 et s'appliquent aux fichiers qu'elles visent. Sans fichier, la checklist commune suffit.
+S'il existe, le lire **avec l'outil Read** plutôt qu'avec `cat`, dont le hook rtk filtre la sortie sur certains fichiers : une case perdue en route ne serait pas vérifiée. Ses sections s'ajoutent alors à celles de l'étape 3 et s'appliquent aux fichiers qu'elles visent. Sans fichier, la checklist commune suffit.
 
 ---
 

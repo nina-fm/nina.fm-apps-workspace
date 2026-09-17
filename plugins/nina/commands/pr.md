@@ -11,6 +11,8 @@ $ARGUMENTS
 
 Tout ce qui se lit est en français : titre et corps de la PR, changeset, messages de commit après le préfixe conventionnel.
 
+`$BRANCH` et `$BASE` ne survivent pas d'une commande à l'autre : les redéfinir au début de chaque commande, ou écrire les valeurs en clair une fois qu'on les connaît.
+
 ---
 
 ### Étape 1 — Contexte
@@ -40,7 +42,7 @@ Les scripts se déduisent du `package.json` à la racine du repo :
 jq -r '.scripts | keys[]' package.json 2>/dev/null
 ```
 
-Lancer dans l'ordre ceux qui existent : `lint`, `type-check`, puis `test:run` s'il existe, sinon `test`. Par exemple `pnpm lint && pnpm type-check && pnpm test`.
+Lancer dans l'ordre ceux qui existent : `lint`, `type-check`, puis `test:run` s'il existe, sinon `test`. Par exemple `pnpm lint && pnpm type-check && pnpm test`. Si le script retenu lance un runner en mode watch (`vitest` ou `jest --watch` sans `run`), ajouter `--run` : sans ça, la commande ne rend jamais la main.
 
 Sans `package.json`, lancer les vérifications que documentent le `CLAUDE.md` du repo (ou `WORKSPACE.md` dans le workspace).
 

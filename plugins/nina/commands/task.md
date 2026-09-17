@@ -21,7 +21,8 @@ La lire d'abord, avec ses commentaires, son epic et ses bloqueurs : les décisio
 
 ```bash
 gh issue view N --comments
-gh api repos/{owner}/{repo}/issues/N/parent --jq '"#\(.number) \(.title)"'   # son epic, s'il y en a une
+# son epic : sans parent, l'API répond 404 et gh écrit le corps de l'erreur sur la sortie standard, d'où le filtre
+gh api repos/{owner}/{repo}/issues/N/parent --jq '"#\(.number) \(.title)"' 2>/dev/null | grep '^#' || echo "pas d'epic"
 gh api repos/{owner}/{repo}/issues/N/dependencies/blocked_by --jq '.[] | "\(.html_url) \(.state)"'
 ```
 
@@ -58,10 +59,10 @@ Avant d'écrire quoi que ce soit :
 ### Étape 3 — Checklist du repo
 
 ```bash
-cat "$(git rev-parse --show-toplevel)/.claude/checklists/task.md" 2>/dev/null
+ls "$(git rev-parse --show-toplevel)/.claude/checklists/task.md" 2>/dev/null
 ```
 
-Si le fichier existe, dérouler ses étapes maintenant. Chaque section de plan qu'il demande s'ajoute au plan de l'étape 5, avant « Fichiers à créer ». Sans fichier, passer.
+S'il existe, le lire **avec l'outil Read** plutôt qu'avec `cat`, dont le hook rtk filtre la sortie sur certains fichiers : une étape perdue en route ne serait pas déroulée. Dérouler ses étapes maintenant. Chaque section de plan qu'il demande s'ajoute au plan de l'étape 5, avant « Fichiers à créer ». Sans fichier, passer.
 
 ---
 
