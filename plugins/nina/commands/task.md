@@ -69,8 +69,10 @@ Choisir le type conventionnel :
 ```bash
 DEFAULT=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
 git status --short    # s'il reste des modifications, le signaler avant de changer de branche
-git checkout "$DEFAULT" && git pull origin "$DEFAULT" && git checkout -b <type>/<slug>
+git fetch origin "$DEFAULT" && git checkout --no-track -b <type>/<slug> "origin/$DEFAULT"
 ```
+
+La branche part de `origin/$DEFAULT` fraîchement récupérée : c'est le « sync avant de tirer une branche », et ça marche aussi dans un worktree, où la branche par défaut est souvent déjà extraite ailleurs.
 
 ---
 
