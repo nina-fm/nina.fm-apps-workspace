@@ -1,0 +1,7 @@
+{
+  "name": "nina",
+  "description": "Garde .env et outillage commun aux repos Nina.fm",
+  "author": {
+    "name": "nina-fm"
+  }
+}

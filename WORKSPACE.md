@@ -126,6 +126,37 @@ Aucun serveur MCP : branches, PRs, reviews, issues et Projects passent par la CL
 
 ---
 
+## Plugin nina
+
+L'outillage Claude commun aux repos vit dans un plugin interne, `plugins/nina/`, servi par la marketplace `nina.fm` que déclare ce repo (`.claude-plugin/marketplace.json`).
+
+Contenu actuel : la garde `.env`, un hook `PreToolUse` sur `Read|Glob` qui refuse les fichiers `.env*` sauf `.env.example`.
+
+**Activation** dans un repo, via son `.claude/settings.json` :
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "nina.fm": { "source": { "source": "github", "repo": "nina-fm/nina.fm-apps-workspace" } }
+  },
+  "enabledPlugins": { "nina@nina.fm": true }
+}
+```
+
+**Distribution** : la marketplace est lue sur `main` depuis GitHub. Une modification du plugin n'atteint les repos qu'une fois mergée sur `main`. `plugin.json` ne porte pas de `version` : c'est le commit qui fait foi, et chaque merge vaut mise à jour. Une `version` figerait le plugin tant qu'on oublierait de l'incrémenter.
+
+**Boucle de dev**, depuis le workspace, sur la branche en cours :
+
+```bash
+claude --plugin-dir plugins/nina                                  # charge le plugin local
+bash plugins/nina/hooks/guard-env.test.sh                         # test de la garde .env
+claude plugin validate . && claude plugin validate plugins/nina   # structure
+```
+
+**Désigner un fichier du plugin** dans un hook ou une commande : `${CLAUDE_PLUGIN_ROOT}`, avec accolades. Il est substitué dans le texte d'une commande comme dans ses blocs `` !`…` ``. Sans accolades, `$CLAUDE_PLUGIN_ROOT` fait échouer le contrôle de permission d'un bloc `` !`…` ``.
+
+---
+
 ## Structure de ce Workspace
 
 ```
@@ -135,11 +166,17 @@ Aucun serveur MCP : branches, PRs, reviews, issues et Projects passent par la CL
 ├── docker-compose.dev.yml             ← Compose global (inclut api + auth)
 ├── .gitignore                         ← Ignore les repos de code
 ├── setup.sh                           ← Script d'installation sur nouvelle machine
+├── .claude-plugin/
+│   └── marketplace.json               ← Marketplace nina.fm
+├── plugins/
+│   └── nina/                          ← Plugin interne (voir « Plugin nina »)
+│       ├── .claude-plugin/plugin.json
+│       └── hooks/                     ← hooks.json, garde .env et son test
 └── .claude/
     ├── commands/                      ← Skills disponibles à la racine du workspace
     ├── agents/                        ← api-explorer
     ├── rules/                         ← lessons.md
-    └── settings.json                  ← Hooks (garde .env)
+    └── settings.json                  ← Activation du plugin nina
 
 nina.fm-api/                           ← Repo NestJS (son propre git)
 ├── CLAUDE.md

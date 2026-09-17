@@ -1,0 +1,14 @@
+{
+  "name": "nina.fm",
+  "description": "Outillage Claude partagé par les repos Nina.fm",
+  "owner": {
+    "name": "nina-fm"
+  },
+  "plugins": [
+    {
+      "name": "nina",
+      "source": "./plugins/nina",
+      "description": "Garde .env et outillage commun aux repos Nina.fm"
+    }
+  ]
+}
