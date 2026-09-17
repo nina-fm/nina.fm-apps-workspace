@@ -143,14 +143,15 @@ Contenu actuel : la garde `.env`, un hook `PreToolUse` sur `Read|Glob` qui refus
 }
 ```
 
-**Installation**, une fois par repo et par machine : la déclaration ne suffit pas. L'ouverture d'une session enregistre la marketplace, sans invite, mais n'installe pas le plugin, et la garde reste inactive. Depuis le repo, une session ayant déjà été ouverte :
+**Installation**, une fois par repo et par machine : la déclaration ne suffit pas. L'ouverture d'une session, interactive ou `-p`, enregistre la marketplace sans aucune invite, mais n'installe pas le plugin. `/plugin` le montre alors en erreur (`Plugin "nina" not cached …`), et la garde reste inactive. Depuis le repo, une session ayant déjà été ouverte :
 
 ```bash
 claude plugin install nina@nina.fm --scope project   # idempotent
 claude plugin list                                   # nina@nina.fm : Scope project, ✔ enabled
+git checkout .claude/settings.json                   # install réordonne les clés du fichier
 ```
 
-Ne pas passer par `claude plugin marketplace add` : la commande inscrit la marketplace dans les settings utilisateur, donc pour tous les projets.
+Ne pas passer par `claude plugin marketplace add` : la commande inscrit la marketplace dans les settings utilisateur, donc pour tous les projets. `claude plugin uninstall … --scope project` vide les deux déclarations du `settings.json` versionné.
 
 **Distribution** : la marketplace est lue sur `main` depuis GitHub. Une modification du plugin n'atteint les repos qu'une fois mergée sur `main`. `plugin.json` ne porte pas de `version` : la version installée est le commit (`claude plugin list` affiche son SHA). Une `version` figerait le plugin tant qu'on oublierait de l'incrémenter.
 
