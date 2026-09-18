@@ -65,7 +65,7 @@ cd ~/Sites/nina/nina.fm-apps-workspace/nina.fm-website && claude
 cd ~/Sites/nina/nina.fm-apps-workspace && claude
 ```
 
-En mode Mixtaper, Claude lit `../nina.fm-api/` avec ses outils natifs pour les features cross-repo. Pour éviter la confirmation à chaque lecture, ajouter `Read(//<chemin absolu>/nina.fm-api/**)` dans son `settings.local.json`.
+En mode Mixtaper, Claude lit `../nina.fm-api/` avec ses outils natifs pour les features cross-repo. Pour éviter la confirmation à chaque lecture, la cible est `additionalDirectories` dans le `settings.json` versionné (voir « Accès à l'API », dans « Plugin nina ») ; en attendant faceb#52, website#63 et mixtaper#72, ajouter `Read(//<chemin absolu>/nina.fm-api/**)` dans son `settings.local.json`.
 
 ---
 
@@ -95,7 +95,10 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 - **Squash merge** sur `main` / `master` — historique détaillé dans les PRs
 - **Merger une PR** : toujours `gh pr merge --squash --delete-branch <numéro>` — ne jamais merger manuellement avec `git merge` + `git push`, ce qui laisserait la PR ouverte sur GitHub et contournerait le processus de review
 - **Stacked PRs** : une PR peut pointer vers la branche de la PR précédente pour avoir un diff cohérent. **Au moment du merge d'une PR dans `main`**, mettre immédiatement à jour les PRs qui la référençaient pour qu'elles pointent vers `main` (GitHub "Edit" ou `git rebase main`).
-- **Lint, type-check, tests** : les hooks git husky des quatre apps passent `commitlint` sur le message, `lint-staged` au commit, lint et type-check au push ; les tests tournent au commit dans mixtaper et website, au push dans api et faceb. `/nina:pr` les relance avant de pousser, puis la CI : sur chaque PR dans mixtaper, seulement au push sur `main` ailleurs (api#62, faceb#49, website#60). Seul mixtaper a en plus un hook Claude Code, qui passe ESLint sur chaque fichier écrit (`.claude/scripts/lint-on-write.sh`) ; aucun hook Claude Code ne lance de type-check
+- **Lint, type-check, tests** :
+  - **Hooks git husky**, dans les quatre apps : `commitlint` sur le message, `lint-staged` au commit, lint et type-check au push ; les tests au commit dans mixtaper et website, au push dans api et faceb. `/nina:pr` les relance avant de pousser
+  - **CI** : sur chaque PR dans mixtaper, seulement au push sur `main` ailleurs (api#62, faceb#49, website#60)
+  - **Hook Claude Code** : seul mixtaper en a un, qui passe ESLint sur chaque fichier écrit (`.claude/scripts/lint-on-write.sh`) ; aucun ne lance de type-check
 
 ### Versioning avec Changesets
 
