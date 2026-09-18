@@ -18,7 +18,8 @@ Tout ce que tu écris est en français : analyse, issues créées, commentaires.
 Si `$ARGUMENTS` est une issue (`#N` ou son URL), la lire avec ses commentaires et ses sous-issues existantes : c'est l'epic, et ses décisions font partie de la spec. Pour l'URL d'un autre repo, remplacer `{owner}/{repo}` par le `nina-fm/<repo>` de l'URL et ajouter `-R nina-fm/<repo>` à `gh issue view`.
 
 ```bash
-gh issue view N --comments
+# --comments hors terminal n'écrit que les commentaires, sans titre ni corps : d'où --json
+gh issue view N --json title,labels,body,comments --jq '"# \(.title)\nlabels : \([.labels[].name] | join(", "))\n\n\(.body)\n\n--- commentaires ---\n\(if (.comments | length) == 0 then "(aucun)" else [.comments[] | "\(.author.login) : \(.body)"] | join("\n\n") end)"'
 gh api repos/{owner}/{repo}/issues/N/sub_issues --jq '.[] | "#\(.number) \(.state) \(.title)"'
 ```
 

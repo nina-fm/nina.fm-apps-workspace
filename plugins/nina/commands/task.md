@@ -20,7 +20,8 @@ La lire d'abord, avec ses commentaires, son epic et ses bloqueurs : les décisio
 `{owner}/{repo}` est remplacé par `gh` d'après le repo courant. Pour l'URL d'un autre repo, remplacer par le `nina-fm/<repo>` de l'URL et ajouter `-R nina-fm/<repo>` à `gh issue view`.
 
 ```bash
-gh issue view N --comments
+# --comments hors terminal n'écrit que les commentaires, sans titre ni corps : d'où --json
+gh issue view N --json title,labels,body,comments --jq '"# \(.title)\nlabels : \([.labels[].name] | join(", "))\n\n\(.body)\n\n--- commentaires ---\n\(if (.comments | length) == 0 then "(aucun)" else [.comments[] | "\(.author.login) : \(.body)"] | join("\n\n") end)"'
 # son epic : sans parent, l'API répond 404 et gh écrit le corps de l'erreur sur la sortie standard, d'où le filtre
 gh api repos/{owner}/{repo}/issues/N/parent --jq '"#\(.number) \(.title)"' 2>/dev/null | grep '^#' || echo "pas d'epic"
 gh api repos/{owner}/{repo}/issues/N/dependencies/blocked_by --jq '.[] | "\(.html_url) \(.state)"'
