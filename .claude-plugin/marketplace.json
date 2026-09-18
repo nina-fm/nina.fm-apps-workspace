@@ -8,7 +8,7 @@
     {
       "name": "nina",
       "source": "./plugins/nina",
-      "description": "Garde .env, plan du Project GitHub et commandes communes (epic, task, pr, review) des repos Nina.fm"
+      "description": "Garde .env, plan du Project GitHub, commandes communes (epic, task, pr, review) et agent api-explorer des repos Nina.fm"
     }
   ]
 }

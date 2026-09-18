@@ -26,6 +26,7 @@ echo "📦 Clonage des repos..."
 
 REPOS=(
   "nina.fm-api"
+  "nina.fm-auth"
   "nina.fm-mixtaper"
   "nina.fm-faceb"
   "nina.fm-website"
@@ -36,7 +37,7 @@ for repo in "${REPOS[@]}"; do
     echo "  ↩️  $repo déjà présent — skip"
   else
     echo "  ⬇️  Clonage de $repo..."
-    git clone "git@github.com:YOUR_ORG/$repo.git" "$WORKSPACE_DIR/$repo"
+    git clone "git@github.com:nina-fm/$repo.git" "$WORKSPACE_DIR/$repo"
   fi
 done
 
@@ -93,6 +94,6 @@ echo ""
 echo "Prochaines étapes manuelles :"
 echo "  1. Compléter les fichiers .env dans chaque repo"
 echo "  2. Authentifier la CLI GitHub si besoin : gh auth login"
-echo "  3. Lancer les bases de données : voir nina.fm-api/docker-compose.yml"
+echo "  3. Lancer l'infra (postgres, redis, supertokens) : make dev, depuis le workspace"
 echo "  4. Lancer l'API : cd nina.fm-api && pnpm start:dev"
 echo "  5. Lancer Mixtaper : cd nina.fm-mixtaper && pnpm dev"
