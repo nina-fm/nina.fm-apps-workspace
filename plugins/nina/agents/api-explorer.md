@@ -27,8 +27,9 @@ Si `src/main.ts` n'y est pas, dis-le et arrête-toi : ne cherche pas ailleurs.
 repository), `application/` (services, use-cases, DTO d'entrée), `infrastructure/`
 (TypeORM, adapters), `interfaces/` (controllers, DTO de réponse, guards, décorateurs).
 
-Pour la liste à jour : `src/*/interfaces/*.controller.ts`, et le `@Controller('…')` de
-chacun pour le préfixe de route. Repères :
+Pour la liste à jour : `src/**/*.controller.ts`, et le `@Controller('…')` de chacun pour
+le préfixe de route. `health/` et `metrics/` échappent aux couches : leurs routes sont à
+plat, dans `health.controller.ts` et `metrics.module.ts`. Repères :
 
 - `mix-sessions/` — sessions de mixage et leurs pistes (`sessions/:sessionId/tracks`)
 - `transitions/` — transitions entre pistes (`sessions/:sessionId/transitions`) et interludes
@@ -45,7 +46,8 @@ http://localhost:4000/docs.
 
 ## Format de réponse
 
-Aucun intercepteur global n'enveloppe les réponses : chaque controller décide. Lis le
+Aucun intercepteur global n'enveloppe les réponses (celui de `metrics/` ne fait que
+mesurer) : chaque controller décide. Lis le
 `return` de la méthode et le type que renvoie le service avant de conclure.
 
 - Enveloppé, dans la plupart des modules (`mix-sessions`, `mixtapes`, `djs`, `tags`,
