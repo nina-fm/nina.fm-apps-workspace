@@ -44,6 +44,8 @@ jq -r '.scripts | keys[]' package.json 2>/dev/null
 
 Lancer dans l'ordre ceux qui existent : `lint`, `type-check`, puis `test:run` s'il existe, sinon `test`. Par exemple `pnpm lint && pnpm type-check && pnpm test`. Si le script retenu lance un runner en mode watch (`vitest` ou `jest --watch` sans `run`), ajouter `--run` : sans ça, la commande ne rend jamais la main.
 
+Passer chaque script par `rtk proxy` (`rtk proxy pnpm lint`) : sinon rtk réécrit `pnpm lint` en `eslint -f json .`, qui lint tout le dossier au lieu des chemins du script. Dans nina.fm-api, ce lint tournait encore après 10 min ; relancé avec `rtk proxy`, il est passé.
+
 Sans `package.json`, lancer les vérifications que documentent le `CLAUDE.md` du repo (ou `WORKSPACE.md` dans le workspace).
 
 Si une vérification échoue :
