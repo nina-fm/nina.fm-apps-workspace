@@ -1,7 +1,7 @@
 # Nina.fm Workspace
 
 Workspace de configuration Claude Code pour l'écosystème applicatif de Nina.fm.
-Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (CLAUDE.md, hooks, commandes, agents, rules).
+Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (CLAUDE.md, hooks, commandes, agents, rules) et les workflows CI réutilisables.
 
 ---
 
@@ -95,7 +95,7 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 - **Squash merge** sur `main` / `master` — historique détaillé dans les PRs
 - **Merger une PR** : toujours `gh pr merge --squash --delete-branch <numéro>` — ne jamais merger manuellement avec `git merge` + `git push`, ce qui laisserait la PR ouverte sur GitHub et contournerait le processus de review
 - **Stacked PRs** : une PR peut pointer vers la branche de la PR précédente pour avoir un diff cohérent. **Au moment du merge d'une PR dans `main`**, mettre immédiatement à jour les PRs qui la référençaient pour qu'elles pointent vers `main` (GitHub "Edit" ou `git rebase main`).
-- **Lint + type-check** : automatiques via hooks Claude Code à chaque édition
+- **Lint, type-check, tests** : les hooks git husky des quatre apps passent `commitlint` sur le message, `lint-staged` au commit, lint et type-check au push ; les tests tournent au commit dans mixtaper et website, au push dans api et faceb. `/nina:pr` les relance avant de pousser, puis la CI : sur chaque PR dans mixtaper, seulement au push sur `main` ailleurs (api#62, faceb#49, website#60). Seul mixtaper a en plus un hook Claude Code, qui passe ESLint sur chaque fichier écrit (`.claude/scripts/lint-on-write.sh`) ; aucun hook Claude Code ne lance de type-check
 
 ### Versioning avec Changesets
 
@@ -169,7 +169,7 @@ Section du plan : `#### Où va le code`, tableau `| Code | Destination |`.
 
 Ce bloc est le même partout. Ne pas y recopier le `env` du `settings.json` du workspace : `NINA_PROJECT` est propre à chaque repo.
 
-**Accès à l'API**, dans le `.claude/settings.json` des apps qui appellent l'API (faceb, website, mixtaper) : `"permissions": { "additionalDirectories": ["../nina.fm-api"] }`, pour que `nina:api-explorer` y lise sans refus. Versionné et non dans `settings.local.json` : le chemin ne dépend que de la disposition des repos, imposée par `setup.sh`. Posé par faceb#52, website#63, mixtaper#72.
+**Accès à l'API**, dans le `.claude/settings.json` des apps qui appellent l'API (faceb, website, mixtaper) : `"permissions": { "additionalDirectories": ["../nina.fm-api"] }`, pour que `nina:api-explorer` y lise sans refus. Versionné et non dans `settings.local.json` : le chemin ne dépend que de la disposition des repos, imposée par `setup.sh`. À poser par faceb#52, website#63, mixtaper#72.
 
 **Project du repo**, à part de l'activation : `"env": { "NINA_PROJECT": "<numéro>" }` seulement si le repo a **son propre** Project, dont il est le sujet. Valeurs : workspace `2` (Apps Workspace) ; mixtaper `1` (Mixtaper), posée par la PR mixtaper de #13. api, faceb, website et auth n'en ont pas. Qu'un de leurs tickets figure dans le Project 2 ou le Project 1 ne leur en donne pas un : sans `NINA_PROJECT`, rien ne s'affiche en début de session, et c'est voulu.
 
@@ -208,20 +208,25 @@ claude plugin validate . && claude plugin validate plugins/nina   # structure
 
 ## Structure de ce Workspace
 
+Les cinq repos de code sont clonés **dans** le workspace par `setup.sh`, et ignorés par son git (`nina.fm-*/`) ; ils sont décrits à part ci-dessous. Pour les quatre apps, seuls `CLAUDE.md`, `docs/` et `.claude/` sont listés. Seuls les fichiers versionnés figurent ; `settings.local.json`, propre à chaque machine, existe à côté de chaque `settings.json`.
+
 ```
 ~/Sites/nina/nina.fm-apps-workspace    ← Ce repo (nina.fm-apps-workspace)
+├── CLAUDE.md                          ← Guidelines transversales, lues par toutes les sessions
 ├── WORKSPACE.md                       ← Ce fichier
 ├── Makefile                           ← Commandes dev (make dev, make dev-*)
 ├── docker-compose.dev.yml             ← Compose global (inclut api + auth)
 ├── .gitignore                         ← Ignore les repos de code
 ├── setup.sh                           ← Script d'installation sur nouvelle machine
+├── .github/workflows/                 ← Workflows réutilisables (node-validate, release, cleanup)
 ├── .claude-plugin/
 │   └── marketplace.json               ← Marketplace nina.fm
 ├── plugins/
 │   └── nina/                          ← Plugin interne (voir « Plugin nina »)
 │       ├── .claude-plugin/plugin.json
+│       ├── LESSONS.md                 ← Pièges du chantier du plugin
 │       ├── agents/                    ← api-explorer (nina:api-explorer)
-│       ├── bin/                       ← plan.sh et son test (dans le PATH des sessions)
+│       ├── bin/                       ← plan.sh, review-diff.sh et leurs tests (dans le PATH des sessions)
 │       ├── commands/                  ← /nina:epic, /nina:task, /nina:pr, /nina:review
 │       └── hooks/                     ← hooks.json, garde .env et son test
 └── .claude/
@@ -230,64 +235,54 @@ claude plugin validate . && claude plugin validate plugins/nina   # structure
 
 nina.fm-api/                           ← Repo NestJS (son propre git)
 ├── CLAUDE.md
+├── docs/                              ← Architecture, Docker, migrations, versioning…
 └── .claude/
-    ├── commands/                      ← Skills disponibles dans ce repo
-    │   ├── task.md                    ← /task — plan d'implémentation
-    │   ├── epic.md                    ← /epic — décomposition feature
-    │   ├── pr.md                      ← /pr — qualité + création PR
-    │   └── review.md                  ← /review — review IA
-    ├── settings.json                  ← Hooks qualité (eslint .ts, type-check avant commit)
-    ├── settings.local.json
-    └── memory/
-        ├── architecture.md
-        ├── migrations.md
-        └── workflow.md
+    ├── agents/                        ← Agents du repo (modules, fichiers Bruno)
+    ├── checklists/                    ← task.md, review.md (lues par /nina:task, /nina:review)
+    ├── commands/                      ← /arch-context, /new-migration
+    ├── rules/                         ← lessons.md
+    └── settings.json                  ← Activation du plugin nina, permissions (lint, type-check, test)
 
 nina.fm-mixtaper/                      ← Repo SolidJS (son propre git)
 ├── CLAUDE.md
+├── docs/                              ← Architecture, auth, déploiement, transitions…
 └── .claude/
-    ├── commands/                      ← Skills disponibles dans ce repo
-    │   ├── task.md                    ← /task — plan d'implémentation
-    │   ├── epic.md                    ← /epic — décomposition feature
-    │   ├── pr.md                      ← /pr — qualité + création PR
-    │   ├── review.md                  ← /review — review IA
-    │   └── sync-types.md              ← /sync-types — regénère types API
-    ├── settings.json                  ← Hooks qualité (eslint .ts/.tsx, type-check avant commit)
-    ├── settings.local.json
-    ├── worktrees/                     ← Git worktrees (Claude Code)
-    └── memory/
-        ├── architecture.md
-        └── workflow.md
+    ├── agents/                        ← Agents du repo (features, composants, audio, tests)
+    ├── checklists/                    ← task.md, review.md
+    ├── commands/                      ← /recette, /sync-types
+    ├── rules/                         ← Règles par dossier (components, features, routes, domain) + lessons.md
+    ├── scripts/                       ← lint-on-write.sh (hook ESLint)
+    └── settings.json                  ← Activation du plugin nina, NINA_PROJECT=1, hook PostToolUse ESLint
 
 nina.fm-faceb/                         ← Repo Nuxt (son propre git)
 ├── CLAUDE.md
+├── docs/                              ← Auth, permissions, déploiement…
 └── .claude/
-    ├── commands/                      ← Skills disponibles dans ce repo
-    │   ├── task.md                    ← /task — plan d'implémentation
-    │   ├── epic.md                    ← /epic — décomposition feature
-    │   ├── pr.md                      ← /pr — qualité + création PR
-    │   ├── review.md                  ← /review — review IA
-    │   └── sync-types.md              ← /sync-types — regénère types API
-    ├── settings.json                  ← Hooks qualité (eslint .ts/.vue, type-check avant commit)
-    └── settings.local.json
+    ├── agents/                        ← Agents du repo (features)
+    ├── checklists/                    ← task.md, review.md
+    ├── commands/                      ← /sync-types
+    ├── rules/                         ← lessons.md
+    └── settings.json                  ← Activation du plugin nina
 
 nina.fm-website/                       ← Repo Nuxt (son propre git)
 ├── CLAUDE.md
+├── docs/                              ← Déploiement, migration Docker
 └── .claude/
-    ├── commands/                      ← Skills disponibles dans ce repo
-    │   ├── task.md                    ← /task — plan d'implémentation
-    │   ├── epic.md                    ← /epic — décomposition feature
-    │   ├── pr.md                      ← /pr — qualité + création PR
-    │   └── review.md                  ← /review — review IA
-    ├── settings.json                  ← Hooks qualité (eslint .ts/.vue, lint avant commit)
-    └── settings.local.json
+    ├── agents/                        ← Agents du repo (composants, SSE)
+    ├── checklists/                    ← task.md, review.md
+    ├── rules/                         ← lessons.md
+    └── settings.json                  ← Activation du plugin nina
 
 nina.fm-auth/                          ← Repo infra SuperTokens (son propre git)
+├── CLAUDE.md
 ├── README.md
 ├── QUICK_START.md
+├── docs/                              ← Architecture, déploiement, RBAC, workflows…
 ├── docker-compose.dev.yml             ← SuperTokens core + postgres dédié
 ├── docker-compose.prod.yml
-└── Makefile
+├── Makefile
+└── .claude/
+    └── settings.json                  ← Activation du plugin nina
 ```
 
 ---
@@ -342,9 +337,15 @@ Servies par le plugin nina dans tout repo qui l'active :
 | `/nina:epic #N` ou `"description"` | Explore et découpe une grande fonctionnalité ; une fois le découpage approuvé, crée les sous-issues, leurs dépendances, et les range dans le Project (`NINA_PROJECT`).                                       |
 | `/nina:pr`                         | Vérifications déduites de `package.json`, changeset si le repo utilise Changesets, push avec upstream, `gh pr create`.                                                                                       |
 | `/nina:review [N]`                 | Review du diff (PR `N` ou branche courante) avec la checklist commune et `.claude/checklists/review.md` ; avec `N`, publiée par `gh pr comment`.                                                              |
-| `/sync-types`                      | Regénère les types API depuis l'OpenAPI (mixtaper + faceb uniquement, commande locale au repo)                                                                                                               |
 
-Les copies locales `/task`, `/epic`, `/pr`, `/review` des repos disparaissent avec leurs issues de retrait (api#59, faceb#46, mixtaper#65, website#58).
+Commandes locales, dans le `.claude/commands/` de leur repo :
+
+| Commande         | Repo            | Description                                                         |
+| ---------------- | --------------- | ------------------------------------------------------------------- |
+| `/arch-context`  | api             | Charge le contexte d'architecture (`docs/ARCHITECTURE.md`)          |
+| `/new-migration` | api             | Crée une migration TypeORM                                          |
+| `/recette`       | mixtaper        | Protocole de recette dans le navigateur (instrumentation Web Audio) |
+| `/sync-types`    | mixtaper, faceb | Regénère le client API depuis le schéma OpenAPI de nina.fm-api      |
 
 ## Workflow Agentique (rappel)
 
@@ -356,7 +357,7 @@ Les copies locales `/task`, `/epic`, `/pr`, `/review` des repos disparaissent av
    → Recette de constat + plan d'implémentation → tu valides / corriges
 
 3. Agent implémente
-   → Hooks qualité : lint + type-check automatiques à chaque édition
+   → ESLint à chaque écriture dans mixtaper (hook Claude Code) ; partout, husky : commitlint, lint-staged au commit, lint + type-check au push, tests au commit ou au push selon le repo
 
 4. /nina:pr
    → Vérifications + création PR(s) sur les repos impactés
