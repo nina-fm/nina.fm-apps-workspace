@@ -95,7 +95,7 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 - **Squash merge** sur `main` / `master` — historique détaillé dans les PRs
 - **Merger une PR** : toujours `gh pr merge --squash --delete-branch <numéro>` — ne jamais merger manuellement avec `git merge` + `git push`, ce qui laisserait la PR ouverte sur GitHub et contournerait le processus de review
 - **Stacked PRs** : une PR peut pointer vers la branche de la PR précédente pour avoir un diff cohérent. **Au moment du merge d'une PR dans `main`**, mettre immédiatement à jour les PRs qui la référençaient pour qu'elles pointent vers `main` (GitHub "Edit" ou `git rebase main`).
-- **Lint + type-check** : lancés par `/nina:pr` avant de pousser, puis par la CI. Seul mixtaper a un hook Claude Code, qui passe ESLint sur chaque fichier écrit (`.claude/scripts/lint-on-write.sh`) ; aucun repo ne lance de type-check par hook
+- **Lint + type-check** : les hooks git husky des quatre apps passent `lint-staged` au commit, lint et type-check au push. `/nina:pr` les relance avant de pousser, puis la CI : sur chaque PR dans mixtaper, seulement au push sur `main` ailleurs (api#62, faceb#49, website#60). Seul mixtaper a en plus un hook Claude Code, qui passe ESLint sur chaque fichier écrit (`.claude/scripts/lint-on-write.sh`) ; aucun hook Claude Code ne lance de type-check
 
 ### Versioning avec Changesets
 
@@ -208,7 +208,7 @@ claude plugin validate . && claude plugin validate plugins/nina   # structure
 
 ## Structure de ce Workspace
 
-Seuls les fichiers versionnés sont listés ; `settings.local.json`, propre à chaque machine, existe à côté de chaque `settings.json`.
+Les cinq repos de code sont clonés **dans** le workspace par `setup.sh`, et ignorés par son git (`nina.fm-*/`) ; ils sont décrits à part ci-dessous. Pour les quatre apps, seuls `CLAUDE.md`, `docs/` et `.claude/` sont listés. Seuls les fichiers versionnés figurent ; `settings.local.json`, propre à chaque machine, existe à côté de chaque `settings.json`.
 
 ```
 ~/Sites/nina/nina.fm-apps-workspace    ← Ce repo (nina.fm-apps-workspace)
@@ -235,6 +235,7 @@ Seuls les fichiers versionnés sont listés ; `settings.local.json`, propre à c
 
 nina.fm-api/                           ← Repo NestJS (son propre git)
 ├── CLAUDE.md
+├── docs/                              ← Architecture, Docker, migrations, versioning…
 └── .claude/
     ├── agents/                        ← Agents du repo (modules, fichiers Bruno)
     ├── checklists/                    ← task.md, review.md (lues par /nina:task, /nina:review)
@@ -244,6 +245,7 @@ nina.fm-api/                           ← Repo NestJS (son propre git)
 
 nina.fm-mixtaper/                      ← Repo SolidJS (son propre git)
 ├── CLAUDE.md
+├── docs/                              ← Architecture, auth, déploiement, transitions…
 └── .claude/
     ├── agents/                        ← Agents du repo (features, composants, audio, tests)
     ├── checklists/                    ← task.md, review.md
@@ -254,6 +256,7 @@ nina.fm-mixtaper/                      ← Repo SolidJS (son propre git)
 
 nina.fm-faceb/                         ← Repo Nuxt (son propre git)
 ├── CLAUDE.md
+├── docs/                              ← Auth, permissions, déploiement…
 └── .claude/
     ├── agents/                        ← Agents du repo (features)
     ├── checklists/                    ← task.md, review.md
@@ -263,6 +266,7 @@ nina.fm-faceb/                         ← Repo Nuxt (son propre git)
 
 nina.fm-website/                       ← Repo Nuxt (son propre git)
 ├── CLAUDE.md
+├── docs/                              ← Déploiement, migration Docker
 └── .claude/
     ├── agents/                        ← Agents du repo (composants, SSE)
     ├── checklists/                    ← task.md, review.md
@@ -353,7 +357,7 @@ Commandes locales, dans le `.claude/commands/` de leur repo :
    → Recette de constat + plan d'implémentation → tu valides / corriges
 
 3. Agent implémente
-   → ESLint à chaque écriture dans mixtaper (hook) ; ailleurs, lint et type-check à l'étape suivante
+   → ESLint à chaque écriture dans mixtaper (hook Claude Code) ; partout, lint-staged au commit, lint + type-check au push (husky)
 
 4. /nina:pr
    → Vérifications + création PR(s) sur les repos impactés
