@@ -83,6 +83,10 @@ mesurer) : chaque controller décide. Lis le
   (`pnpm types:sync`, API lancée sur localhost:4000). Le mutator écrit à la main,
   `fetcher.ts`, porte l'URL de base (`NUXT_PUBLIC_API_URL` / `VITE_NINA_API_URL`) et
   `credentials: 'include'`
+- Les deux mutators ne rendent pas la même forme : celui de faceb enveloppe le corps
+  dans `{ data, status, headers }`, celui de mixtaper le rend tel quel. Une réponse
+  `{ data: T }` de l'API se lit donc `res.data.data` dans faceb et `res.data` dans
+  mixtaper
 - **website** : pas de client généré ; il consomme le SSE de `stream/`
   (`app/lib/sse/`)
 
