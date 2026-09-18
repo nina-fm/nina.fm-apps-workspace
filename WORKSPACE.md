@@ -1,7 +1,7 @@
 # Nina.fm Workspace
 
 Workspace de configuration Claude Code pour l'écosystème applicatif de Nina.fm.
-Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (CLAUDE.md, hooks, commandes, agents, rules).
+Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (CLAUDE.md, hooks, commandes, agents, rules) et les workflows CI réutilisables.
 
 ---
 
@@ -95,7 +95,7 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
 - **Squash merge** sur `main` / `master` — historique détaillé dans les PRs
 - **Merger une PR** : toujours `gh pr merge --squash --delete-branch <numéro>` — ne jamais merger manuellement avec `git merge` + `git push`, ce qui laisserait la PR ouverte sur GitHub et contournerait le processus de review
 - **Stacked PRs** : une PR peut pointer vers la branche de la PR précédente pour avoir un diff cohérent. **Au moment du merge d'une PR dans `main`**, mettre immédiatement à jour les PRs qui la référençaient pour qu'elles pointent vers `main` (GitHub "Edit" ou `git rebase main`).
-- **Lint + type-check** : les hooks git husky des quatre apps passent `lint-staged` au commit, lint et type-check au push. `/nina:pr` les relance avant de pousser, puis la CI : sur chaque PR dans mixtaper, seulement au push sur `main` ailleurs (api#62, faceb#49, website#60). Seul mixtaper a en plus un hook Claude Code, qui passe ESLint sur chaque fichier écrit (`.claude/scripts/lint-on-write.sh`) ; aucun hook Claude Code ne lance de type-check
+- **Lint, type-check, tests** : les hooks git husky des quatre apps passent `commitlint` sur le message, `lint-staged` au commit, lint et type-check au push ; les tests tournent au commit dans mixtaper et website, au push dans api et faceb. `/nina:pr` les relance avant de pousser, puis la CI : sur chaque PR dans mixtaper, seulement au push sur `main` ailleurs (api#62, faceb#49, website#60). Seul mixtaper a en plus un hook Claude Code, qui passe ESLint sur chaque fichier écrit (`.claude/scripts/lint-on-write.sh`) ; aucun hook Claude Code ne lance de type-check
 
 ### Versioning avec Changesets
 
@@ -357,7 +357,7 @@ Commandes locales, dans le `.claude/commands/` de leur repo :
    → Recette de constat + plan d'implémentation → tu valides / corriges
 
 3. Agent implémente
-   → ESLint à chaque écriture dans mixtaper (hook Claude Code) ; partout, lint-staged au commit, lint + type-check au push (husky)
+   → ESLint à chaque écriture dans mixtaper (hook Claude Code) ; partout, husky : commitlint, lint-staged au commit, lint + type-check au push, tests au commit ou au push selon le repo
 
 4. /nina:pr
    → Vérifications + création PR(s) sur les repos impactés
