@@ -136,6 +136,7 @@ Contenu actuel :
 
 - **Garde `.env`** : un hook `PreToolUse` sur `Read|Glob` qui refuse les fichiers `.env*` sauf `.env.example`.
 - **Plan** : `bin/plan.sh` affiche le Project GitHub du repo, via un hook `SessionStart` (`startup|clear|compact`). Le numéro du Project vient de `NINA_PROJECT`, posé dans le `env` du `.claude/settings.json` du repo (`2` pour le workspace) ; le titre vient du Project. Sans `NINA_PROJECT`, sans `gh` ou hors ligne, le script reste muet. `bin/` du plugin est dans le PATH d'une session : `plan.sh add <url> <Horizon>` range une issue dans le Project (Status Todo et son Horizon), et nomme le Project visé. Une session garde le `NINA_PROJECT` du repo où elle a été lancée, même dans un sous-repo : depuis le workspace, une issue Mixtaper se range avec `NINA_PROJECT=1 plan.sh add …`.
+- **Agent `nina:api-explorer`** (`agents/`) : contexte de `nina.fm-api` pour les apps — endpoints, format de réponse, auth. Il lit le code de l'API dans le repo frère `../nina.fm-api/` ; depuis une app, ce dossier est hors du projet, et ses lectures sont refusées tant que l'app ne l'ouvre pas (voir « Accès à l'API » ci-dessous).
 - **Commandes communes** : `/nina:epic`, `/nina:task`, `/nina:pr`, `/nina:review` (`commands/`, voir « Commandes Disponibles »). Tronc commun à tous les repos : elles passent par `gh`, et déduisent ce qui se déduit — le repo (`gh repo view`, `{owner}/{repo}` dans `gh api`), la branche par défaut, le nom du package et les scripts de vérification (`package.json`), l'usage de Changesets (`.changeset/config.json`). Ce qui est propre à une stack vient de la checklist du repo.
 
 **Checklists du repo** : `.claude/checklists/review.md` et `.claude/checklists/task.md`, à la racine du repo (`git rev-parse --show-toplevel`). Chacune est facultative : la commande la lit si elle existe et s'en passe sinon. Elles sont hors de `.claude/rules/`, qui se charge à chaque session, car elles ne servent qu'à la commande.
@@ -167,6 +168,8 @@ Section du plan : `#### Où va le code`, tableau `| Code | Destination |`.
 ```
 
 Ce bloc est le même partout. Ne pas y recopier le `env` du `settings.json` du workspace : `NINA_PROJECT` est propre à chaque repo.
+
+**Accès à l'API**, dans le `.claude/settings.json` des apps qui appellent l'API (faceb, website, mixtaper) : `"permissions": { "additionalDirectories": ["../nina.fm-api"] }`, pour que `nina:api-explorer` y lise sans refus. Versionné et non dans `settings.local.json` : le chemin ne dépend que de la disposition des repos, imposée par `setup.sh`. Posé par faceb#52, website#63, mixtaper#72.
 
 **Project du repo**, à part de l'activation : `"env": { "NINA_PROJECT": "<numéro>" }` seulement si le repo a **son propre** Project, dont il est le sujet. Valeurs : workspace `2` (Apps Workspace) ; mixtaper `1` (Mixtaper), posée par la PR mixtaper de #13. api, faceb, website et auth n'en ont pas. Qu'un de leurs tickets figure dans le Project 2 ou le Project 1 ne leur en donne pas un : sans `NINA_PROJECT`, rien ne s'affiche en début de session, et c'est voulu.
 
@@ -217,11 +220,11 @@ claude plugin validate . && claude plugin validate plugins/nina   # structure
 ├── plugins/
 │   └── nina/                          ← Plugin interne (voir « Plugin nina »)
 │       ├── .claude-plugin/plugin.json
+│       ├── agents/                    ← api-explorer (nina:api-explorer)
 │       ├── bin/                       ← plan.sh et son test (dans le PATH des sessions)
 │       ├── commands/                  ← /nina:epic, /nina:task, /nina:pr, /nina:review
 │       └── hooks/                     ← hooks.json, garde .env et son test
 └── .claude/
-    ├── agents/                        ← api-explorer
     ├── rules/                         ← lessons.md
     └── settings.json                  ← Activation du plugin nina, NINA_PROJECT=2
 

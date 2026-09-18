@@ -29,6 +29,11 @@ repos. À lire avant de toucher aux hooks, aux commandes ou à `bin/`.
   après le merge de #19, la garde `.env` était inactive dans le workspace. La recette
   d'un plugin se rejoue après merge, sans `--plugin-dir`, sur un faux `.env` ;
   `claude plugin list` montre ce qui est réellement installé.
+- Un agent du plugin qui lit un repo frère (`../nina.fm-api`) est **refusé** hors du
+  projet : depuis faceb en `-p`, 4 lectures refusées et 0 fichier lu (#15), et le modèle
+  principal se rabat sur Bash, ce qui masque l'échec dans sa réponse. Relever
+  `permission_denials` (`--output-format json`) ; l'accès passe par
+  `additionalDirectories` dans le `settings.json` du repo, ou `--add-dir` en recette.
 
 ## Mode auto et self-modification
 
