@@ -42,7 +42,15 @@ Les scripts se déduisent du `package.json` à la racine du repo :
 jq -r '.scripts | keys[]' package.json 2>/dev/null
 ```
 
-Lancer dans l'ordre ceux qui existent : `lint`, `type-check`, puis `test:run` s'il existe, sinon `test`. Par exemple `pnpm lint && pnpm type-check && pnpm test`. Si le script retenu lance un runner en mode watch (`vitest` ou `jest --watch` sans `run`), ajouter `--run` : sans ça, la commande ne rend jamais la main.
+Lancer dans l'ordre ceux qui existent : `lint`, `type-check`, puis `test:run` s'il existe, sinon `test`. Chaque script passe par son propre `rtk proxy`, le chaînage restant à l'extérieur :
+
+```bash
+rtk proxy pnpm lint && rtk proxy pnpm type-check && rtk proxy pnpm test
+```
+
+Sans `rtk proxy`, le hook réécrit `pnpm lint` en `eslint -f json .`, qui lint tout le dossier au lieu des chemins du script : dans nina.fm-api, ce lint tournait encore après 10 min, et il est passé en quelques secondes une fois relancé sous `rtk proxy`. Et le chaînage ne rentre pas dans les quotes — `rtk proxy 'pnpm lint && pnpm type-check'` passe `&& pnpm type-check` en arguments littéraux à `pnpm lint`, au lieu de lancer deux commandes.
+
+Si le script retenu lance un runner en mode watch (`vitest` ou `jest --watch` sans `run`), ajouter `--run` : sans ça, la commande ne rend jamais la main.
 
 Sans `package.json`, lancer les vérifications que documentent le `CLAUDE.md` du repo (ou `WORKSPACE.md` dans le workspace).
 
