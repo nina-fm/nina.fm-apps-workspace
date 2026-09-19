@@ -162,8 +162,16 @@ Adapter le corps : retirer ce qui ne s'applique pas (pas de Changesets, pas de m
 
 ### Étape 7 — Rendre compte
 
+Si la PR ferme une issue, vérifier si c'est la dernière sous-issue ouverte d'une epic : GitHub ne ferme pas l'epic avec elle. Un seul appel, qui ne sort rien dans le cas courant (remplacer `{owner}/{repo}` par `nina-fm/<repo>` pour une issue d'un autre repo) :
+
+```bash
+# sans parent, l'API répond 404 et gh écrit le corps de l'erreur sur la sortie standard, d'où le filtre
+gh api repos/{owner}/{repo}/issues/N/parent --jq 'select(.sub_issues_summary.total - .sub_issues_summary.completed == 1) | .html_url' 2>/dev/null | grep '^https' || true
+```
+
 Donner :
 - l'URL de la PR
 - branche → base
 - le nombre de commits inclus
+- l'epic que la PR achève, si l'appel ci-dessus en a sorti une : la fermer après le merge, puis lancer `/nina:plan` pour choisir la suite
 - les avertissements : vérification sautée ou échouée hors périmètre, corrections automatiques du lint, changeset absent

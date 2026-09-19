@@ -42,15 +42,15 @@ Le plan d'un repo vit dans son Project GitHub, pas dans ses fichiers. Le plugin 
 l'affiche en début de session quand le repo a le sien (`NINA_PROJECT` dans son
 `.claude/settings.json`).
 
-- **Une issue, une session.** Les epics portent le label `epic` ; leurs sous-issues en
-  sont le découpage, dans l'ordre. Une epic se découpe avec `/nina:epic` au moment d'y
-  venir, pas avant ; une issue se démarre avec `/nina:task #N`.
-- **Toute issue ouverte se range dans le Project** avec son Horizon,
-  `plan.sh add <url> <Horizon>` — y compris celle ouverte sur un autre repo pour le compte
-  de celui-ci. On tranche à l'ouverture si elle passe avant la suite du plan. Les
-  sous-issues entrent sans Horizon ; « Sans horizon » dans le plan affiché signale un oubli.
-- **Horizons** : `Maintenant`, `Ensuite`, `Plus tard`, `Différé`, `Au fil de l'eau`.
-- **Fermer** : la PR porte `Closes #N`, l'issue passe à Done toute seule.
+- **Une issue, une session.** Les epics (label `epic`) se découpent avec `/nina:epic` au
+  moment d'y venir ; leurs sous-issues, dans l'ordre, prennent l'Horizon de l'epic.
+- **Toute issue ouverte se range dans le Project**, `plan.sh add <url> <Horizon>` — y
+  compris celle ouverte sur un autre repo pour le compte de celui-ci.
+- **Horizon** (`Maintenant`, `Ensuite`, `Plus tard`, `Différé`, `Au fil de l'eau`) dit la
+  priorité ; « Maintenant » est un engagement court : l'epic en cours, ou 2 ou 3 issues.
+  Il bouge par `/nina:plan`, au signal du plan affiché ou à la fermeture d'une epic.
+- **Status** dit l'exécution : `/nina:task` passe l'issue en `In Progress`, la PR porte
+  `Closes #N` et l'issue passe à Done toute seule — pas son epic, que `/nina:pr` signale.
 
 ## Recette
 
