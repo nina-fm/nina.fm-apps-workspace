@@ -27,6 +27,11 @@ Un corps de commentaire, d'issue ou de PR se passe par `--body-file`, écrit par
 `<<'EOF'` : en argument, zsh exécute les backticks et casse sur les apostrophes — un
 `'…'` rebouché à la main a fait poster des corps vides.
 
+Une collection se lit avec `--paginate`, sans quoi on n'en voit que les 30 premiers.
+`gh api … --paginate --jq` filtre page par page et rend plusieurs JSON à la suite ;
+`--slurp` rend le tableau des pages, mais **refuse `--jq`** (« the `--slurp` option is
+not supported with `--jq` ») : filtrer en aval, `… --paginate --slurp | jq '.[][]'`.
+
 ## Mutualiser
 
 - Un modèle à recopier ne porte que le **commun** : « sur le modèle du workspace » a fait recopier `env.NINA_PROJECT=2` dans nina.fm-api (api#58), dont le `settings.json` mêle activation commune et valeur propre au repo. Ce qui est propre à chaque repo se décrit à part, avec ses valeurs

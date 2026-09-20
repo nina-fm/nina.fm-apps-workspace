@@ -43,11 +43,13 @@ show() {
   items=$(gh project item-list "$PROJECT" --owner "$OWNER" --format json --limit 200 2>/dev/null) || exit 0
   # Les sous-issues ne sont pas dans item-list : on ne les lit que pour une epic
   # seule en Maintenant, le seul cas où elles changent le signal. Faute de réponse,
-  # pas de signal de débordement plutôt qu'un faux
+  # pas de signal de débordement plutôt qu'un faux. `--slurp` rend un tableau de
+  # pages, d'où le `.[][]` ; il refuse `--jq`, d'où le filtre en aval
   epics=$(jq -r '.items[] | select(.status != "Done" and .horizon == "Maintenant"
     and ((.labels // []) | index("epic") != null)) | .content.url' <<<"$items")
   if [ -n "$epics" ] && [ "$(wc -l <<<"$epics")" -eq 1 ]; then
-    subs=$(gh api "repos/${epics#https://github.com/}/sub_issues" --jq '[.[].html_url]' 2>/dev/null) || subs=null
+    subs=$(gh api "repos/${epics#https://github.com/}/sub_issues" --paginate --slurp 2>/dev/null \
+      | jq -c '[.[][].html_url]' 2>/dev/null) || subs=null
   fi
   jq -r '"Plan \(.title) — \(.url)"' <<<"$project"
   jq -r --arg eau "Au fil de l'eau" --arg repo "$(current_repo)" --argjson subs "$subs" --argjson max "$MAX_NOW" '
@@ -81,8 +83,8 @@ show() {
 # ouvrir les corps : dernière mise à jour, epic et avancement de ses sous-issues,
 # parent, en cours. item-list n'expose ni la date ni le parent, d'où GraphQL
 list() {
-  gh api graphql --paginate --slurp -F n="$PROJECT" -f query='
-    query($n: Int!, $endCursor: String) { organization(login: "nina-fm") { projectV2(number: $n) {
+  gh api graphql --paginate --slurp -F n="$PROJECT" -f owner="$OWNER" -f query='
+    query($owner: String!, $n: Int!, $endCursor: String) { organization(login: $owner) { projectV2(number: $n) {
       items(first: 100, after: $endCursor) {
         pageInfo { hasNextPage endCursor }
         nodes {
@@ -156,9 +158,11 @@ move() {
   item=$(item_of "$url")
   set_field "$item" Horizon "$horizon"
   echo "$url → $horizon (Project $PROJECT $TITLE)"
-  # Les sous-issues suivent l'Horizon de leur epic. En échec, gh écrit le corps de
-  # l'erreur sur la sortie standard : il ne doit pas passer pour des sous-issues
-  subs=$(gh api "repos/${url#https://github.com/}/sub_issues" --jq '.[] | select(.state == "open") | .html_url' 2>/dev/null) || subs=""
+  # Les sous-issues suivent l'Horizon de leur epic, toutes pages lues. En échec, gh
+  # écrit le corps de l'erreur sur la sortie standard, mais sort en 1 : `pipefail`
+  # fait tomber le pipe, et le corps ne passe pas pour des sous-issues
+  subs=$(gh api "repos/${url#https://github.com/}/sub_issues" --paginate --slurp 2>/dev/null \
+    | jq -r '.[][] | select(.state == "open") | .html_url' 2>/dev/null) || subs=""
   for sub in $subs; do
     item=$(item_of "$sub")
     set_field "$item" Horizon "$horizon"
@@ -168,6 +172,10 @@ move() {
 
 start() {
   local url=$1 item epic
+  # Les deux options sont vérifiées avant d'ajouter l'issue : sinon un Project qui
+  # nomme son Status autrement la laisserait ajoutée, sans Status ni Horizon
+  option_id Status "In Progress" >/dev/null
+  option_id Horizon Maintenant >/dev/null
   item=$(item_of "$url")
   set_field "$item" Status "In Progress"
   set_field "$item" Horizon Maintenant

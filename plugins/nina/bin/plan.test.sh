@@ -13,8 +13,10 @@ fail() {
 }
 
 mkdir -p "$work/bin" "$work/repo" "$work/api"
-# gh api <chemin> sert le fichier $GH_API/<chemin, / devenus _> ; sans fichier, un 404
-# dont le corps part sur la sortie standard, comme le vrai gh.
+# gh api <chemin> sert le fichier $GH_API/<chemin, / devenus _>, qui contient les pages
+# de la réponse, une par élément : --slurp les rend telles quelles, --paginate les
+# concatène, sinon la première seule — et --jq avec --slurp est refusé, comme le vrai gh.
+# Sans fichier, un 404 dont le corps part sur la sortie standard, comme le vrai gh.
 # L'item d'une issue est ITEM_<repo>_<numéro>, pour voir lesquels sont modifiés.
 cat >"$work/bin/gh" <<'EOF'
 #!/usr/bin/env bash
@@ -35,7 +37,12 @@ case "$1 $2 $3" in
   "api "*)
     file="$GH_API/$(tr / _ <<<"$2")"
     if [ ! -f "$file" ]; then echo '{"message":"Not Found","status":"404"}'; exit 1; fi
-    out=$(cat "$file")
+    case "$*" in
+      *--slurp*--jq*|*--jq*--slurp*) echo "the \`--slurp\` option is not supported with \`--jq\` or \`--template\`" >&2; exit 1 ;;
+      *--slurp*) out=$(jq -c . "$file") ;;
+      *--paginate*) out=$(jq -c add "$file") ;;
+      *) out=$(jq -c '.[0]' "$file") ;;
+    esac
     ;;
   *) out='' ;;
 esac
@@ -65,11 +72,13 @@ cat >"$work/items.json" <<EOF
 ]}
 EOF
 
-# Sous-issues de l'epic #46 : deux ouvertes, dont une dans l'API, et une fermée
+# Sous-issues de l'epic #46, sur deux pages : deux ouvertes, dont une dans l'API,
+# et une fermée — la seconde page n'est lue que si l'appel pagine
 cat >"$work/api/repos_nina-fm_nina.fm-mixtaper_issues_46_sub_issues" <<EOF
-[{"html_url":"$MIX/38","state":"open"},{"html_url":"$API/56","state":"open"},{"html_url":"$MIX/37","state":"closed"}]
+[[{"html_url":"$MIX/38","state":"open"},{"html_url":"$MIX/37","state":"closed"}],
+ [{"html_url":"$API/56","state":"open"}]]
 EOF
-echo "{\"html_url\":\"$MIX/46\"}" >"$work/api/repos_nina-fm_nina.fm-mixtaper_issues_38_parent"
+echo "[{\"html_url\":\"$MIX/46\"}]" >"$work/api/repos_nina-fm_nina.fm-mixtaper_issues_38_parent"
 
 # items <ligne>… : un item-list fait de ces items, rangés en Maintenant et ouverts
 items() {
@@ -78,6 +87,7 @@ items() {
 }
 issue() { echo "{\"status\":\"Todo\",\"horizon\":\"Maintenant\",\"content\":{\"repository\":\"nina-fm/nina.fm-mixtaper\",\"number\":$1,\"title\":\"T$1\",\"url\":\"$MIX/$1\"}}"; }
 epic() { echo "{\"status\":\"Todo\",\"horizon\":\"Maintenant\",\"labels\":[\"epic\"],\"content\":{\"repository\":\"nina-fm/nina.fm-mixtaper\",\"number\":$1,\"title\":\"E$1\",\"url\":\"$MIX/$1\"}}"; }
+api_issue() { echo "{\"status\":\"Todo\",\"horizon\":\"Maintenant\",\"content\":{\"repository\":\"nina-fm/nina.fm-api\",\"number\":$1,\"title\":\"A$1\",\"url\":\"$API/$1\"}}"; }
 
 git -C "$work/repo" init -q
 git -C "$work/repo" remote add origin git@github.com:nina-fm/nina.fm-mixtaper.git
@@ -147,6 +157,10 @@ signal
 items "$(epic 46)" "$(issue 38)" "$(issue 1)" "$(issue 2)" "$(issue 3)"
 signal
 [[ -z $sig ]] || fail "signal sous-issues : #38 appartient à l'epic, 3 isolées ne débordent pas, obtenu « $sig »"
+
+items "$(epic 46)" "$(issue 38)" "$(api_issue 56)" "$(issue 1)" "$(issue 2)" "$(issue 3)"
+signal
+[[ -z $sig ]] || fail "signal sous-issue en seconde page : api#56 appartient à l'epic, 3 isolées ne débordent pas, obtenu « $sig »"
 
 items "$(epic 46)" "$(issue 38)" "$(issue 1)" "$(issue 2)" "$(issue 3)" "$(issue 4)"
 signal
