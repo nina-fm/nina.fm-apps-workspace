@@ -10,7 +10,9 @@ chantier du plugin `nina` sont dans `plugins/nina/LESSONS.md`.
 
 - Les tableaux commencent à **1** : `${arr[$((i-1))]}` décale tout d'un cran — une boucle `gh issue create` a ainsi collé chaque titre sur le corps suivant. Itérer sur les éléments (`for t in "${arr[@]}"`), pas sur des indices
 - Un mot qui commence par `=` est une expansion (`=cmd` → chemin de `cmd`) : `echo "===== $f"` passe, mais `echo =====` sans guillemets échoue en `==== not found` et interrompt la commande composée. Mettre les séparateurs entre guillemets
+- Un remplacement qui lit son texte dans une variable (`perl … $ENV{SEC}`) remplace par du vide quand la variable manque, sans rien signaler : une section de corps de PR a ainsi été effacée puis publiée. `open … or die` en tête, et relire le fichier (`grep` sur la section) avant publication
 - Une fonction shell qui porte le nom d'un alias zsh (`g`, `gp`…) échoue en `parse error` : `function nom { … }` avec un nom improbable
+- `$var:x` applique le modificateur zsh `:x` : `git show "$B:src/…"` est devenu `…/64-apiproperty-hors-interfacesoller.ts` (`:s` substitue). Accolades avant un deux-points : `"${B}:src/…"`
 
 ## rtk
 
@@ -20,6 +22,17 @@ fait croire à un `max-lines` coupé partout ; un `grep -v motif fichier > corps
 le résumé de rtk au lieu des lignes, et publié un corps de PR tronqué, attribution en
 double. Lire un fichier avec l'outil Read ; pour transformer un fichier ou obtenir une
 sortie brute, `rtk proxy <cmd>`, et contrôler (`wc -l`) avant publication.
+
+`curl`, `diff`, `ps`, `pnpm` et `cat` ne sont plus réécrits (`exclude_commands` de
+`~/Library/Application Support/rtk/config.toml`, qui ne compare que le premier mot) :
+un `curl` rendait un schéma au lieu du JSON, `ps` masquait des processus en cours, et
+`pnpm lint` devenait `rtk lint`, qui perd les chemins du script et lint `dist/`. Les
+autres commandes (`grep`, `git`, `gh`, `npx`…) restent filtrées ; `rtk rewrite "<cmd>"`
+dit ce que le hook en fera.
+
+## Chercher dans les fronts
+
+Le code ne vit pas au même endroit partout : faceb (Nuxt) est dans `app/`, mixtaper dans `src/`. Un `grep … src` sur tous les repos a conclu que faceb n'utilisait pas les types `*OrmEntity`, alors que 21 de ses fichiers les importent. Chercher depuis la racine du repo (`git ls-files | xargs grep`).
 
 ## gh
 
