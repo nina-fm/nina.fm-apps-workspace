@@ -142,7 +142,9 @@ set_field() {
 }
 
 # Le Project visé est nommé : NINA_PROJECT vaut pour toute commande de la session,
-# y compris dans un sous-repo du workspace
+# y compris dans un sous-repo du workspace. Une issue qui relève du Project d'un autre
+# repo se range en le préfixant : depuis faceb, `NINA_PROJECT=2 plan.sh add` pour une
+# issue du workspace — sans quoi workspace#41 est partie dans Face B
 add() {
   local url=$1 horizon=$2 item
   option_id Horizon "$horizon" >/dev/null
