@@ -29,7 +29,7 @@ gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url // empty'   #
 
 - Branche courante égale à `$BASE` : s'arrêter, une PR part d'une branche.
 - Aucun commit d'avance et rien à commiter : s'arrêter, il n'y a rien à proposer.
-- Modifications non commitées : demander à l'utilisateur s'il faut les commiter avant de continuer.
+- Modifications non commitées : demander à l'utilisateur s'il faut les commiter avant de continuer. Un en-tête de commit tient en 100 caractères : commitlint refuse au-delà (`header-max-length`), et le titre de la PR, qui devient celui du squash, suit la même limite. Un commit refusé laisse l'index en place, et le commit suivant de la chaîne l'embarque : un `fix` refusé est ainsi parti sous le `chore:` du changeset, et a été poussé en l'état (api#70). Un commit par commande, `git log -1` pour vérifier qu'il existe avant le suivant.
 - Une PR ouverte existe déjà : lancer quand même les vérifications (étape 2), puis pousser la branche (étape 5), mettre à jour le corps de la PR s'il ne reflète plus les commits (`gh pr edit --body-file`), et donner son URL, sans en créer une autre. Une PR fermée ou mergée sur le même nom de branche ne compte pas.
 
 ---
