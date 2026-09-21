@@ -180,7 +180,7 @@ Ce bloc est le même partout. Ne pas y recopier le `env` du `settings.json` du w
 
 **Accès à l'API**, dans le `.claude/settings.json` des apps qui appellent l'API (faceb, website, mixtaper) : `"permissions": { "additionalDirectories": ["../nina.fm-api"] }`, pour que `nina:api-explorer` y lise sans refus. Versionné et non dans `settings.local.json` : le chemin ne dépend que de la disposition des repos, imposée par `setup.sh`. À poser par faceb#52, website#63, mixtaper#72.
 
-**Project du repo**, à part de l'activation : `"env": { "NINA_PROJECT": "<numéro>" }` seulement si le repo a **son propre** Project, dont il est le sujet. Valeurs : workspace `2` (Apps Workspace) ; mixtaper `1` (Mixtaper), posée par la PR mixtaper de #13. api, faceb, website et auth n'en ont pas. Qu'un de leurs tickets figure dans le Project 2 ou le Project 1 ne leur en donne pas un : sans `NINA_PROJECT`, rien ne s'affiche en début de session, et c'est voulu.
+**Project du repo**, à part de l'activation : `"env": { "NINA_PROJECT": "<numéro>" }` seulement si le repo a **son propre** Project, dont il est le sujet. Valeurs : workspace `2` (Apps Workspace) ; mixtaper `1` (Mixtaper), posée par la PR mixtaper de #13 ; faceb `3` (Face B), par #9. api, website et auth n'en ont pas. Qu'un de leurs tickets figure dans un autre Project ne leur en donne pas un : sans `NINA_PROJECT`, rien ne s'affiche en début de session, et c'est voulu.
 
 **Installation**, une fois par repo et par machine : la déclaration ne suffit pas. L'ouverture d'une session, interactive ou `-p`, enregistre la marketplace sans aucune invite, mais n'installe pas le plugin. `/plugin` le montre alors en erreur (`Plugin "nina" not cached …`), et la garde reste inactive. Depuis le repo, une session ayant déjà été ouverte :
 
