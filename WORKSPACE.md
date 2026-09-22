@@ -65,7 +65,7 @@ cd ~/Sites/nina/nina.fm-apps-workspace/nina.fm-website && claude
 cd ~/Sites/nina/nina.fm-apps-workspace && claude
 ```
 
-En mode Mixtaper, Claude lit `../nina.fm-api/` avec ses outils natifs pour les features cross-repo. Il n'a pas de confirmation à donner à chaque lecture : le `settings.json` versionné de l'app déclare `../nina.fm-api` en `additionalDirectories` (voir « Accès à l'API », dans « Plugin nina »).
+En mode Mixtaper, Face B ou Website, Claude lit `../nina.fm-api/` avec ses outils natifs pour les features cross-repo. Aucune confirmation n'est demandée à chaque lecture : le `settings.json` versionné de l'app déclare `../nina.fm-api` en `additionalDirectories` (voir « Accès à l'API », dans « Plugin nina »).
 
 ---
 
