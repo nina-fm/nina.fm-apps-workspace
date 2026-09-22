@@ -65,7 +65,7 @@ cd ~/Sites/nina/nina.fm-apps-workspace/nina.fm-website && claude
 cd ~/Sites/nina/nina.fm-apps-workspace && claude
 ```
 
-En mode Mixtaper, Claude lit `../nina.fm-api/` avec ses outils natifs pour les features cross-repo. Pour éviter la confirmation à chaque lecture, la cible est `additionalDirectories` dans le `settings.json` versionné (voir « Accès à l'API », dans « Plugin nina ») ; en attendant faceb#52, website#63 et mixtaper#72, ajouter `Read(//<chemin absolu>/nina.fm-api/**)` dans son `settings.local.json`.
+En mode Mixtaper, Claude lit `../nina.fm-api/` avec ses outils natifs pour les features cross-repo. Il n'a pas de confirmation à donner à chaque lecture : le `settings.json` versionné de l'app déclare `../nina.fm-api` en `additionalDirectories` (voir « Accès à l'API », dans « Plugin nina »).
 
 ---
 
@@ -178,7 +178,7 @@ Section du plan : `#### Où va le code`, tableau `| Code | Destination |`.
 
 Ce bloc est le même partout. Ne pas y recopier le `env` du `settings.json` du workspace : `NINA_PROJECT` est propre à chaque repo.
 
-**Accès à l'API**, dans le `.claude/settings.json` des apps qui appellent l'API (faceb, website, mixtaper) : `"permissions": { "additionalDirectories": ["../nina.fm-api"] }`, pour que `nina:api-explorer` y lise sans refus. Versionné et non dans `settings.local.json` : le chemin ne dépend que de la disposition des repos, imposée par `setup.sh`. À poser par faceb#52, website#63, mixtaper#72.
+**Accès à l'API**, dans le `.claude/settings.json` des apps qui appellent l'API (faceb, website, mixtaper) : `"permissions": { "additionalDirectories": ["../nina.fm-api"] }`, pour que `nina:api-explorer` y lise sans refus. Versionné et non dans `settings.local.json` : le chemin ne dépend que de la disposition des repos, imposée par `setup.sh`.
 
 **Project du repo**, à part de l'activation : `"env": { "NINA_PROJECT": "<numéro>" }` seulement si le repo a **son propre** Project, dont il est le sujet. Valeurs : workspace `2` (Apps Workspace) ; mixtaper `1` (Mixtaper), posée par la PR mixtaper de #13 ; faceb `3` (Face B), par #9 ; website `4` (Website), par #10. api et auth n'en ont pas. Qu'un de leurs tickets figure dans un autre Project ne leur en donne pas un : sans `NINA_PROJECT`, rien ne s'affiche en début de session, et c'est voulu.
 
