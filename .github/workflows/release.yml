@@ -50,8 +50,8 @@ jobs:
           if [ "${{ github.ref }}" != "refs/heads/main" ]; then
             CURRENT_VERSION=$(node -p "require('./package.json').version")
             echo "📋 Hors main — version actuelle: $CURRENT_VERSION"
-            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-            echo "has_release=false" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -62,7 +62,9 @@ jobs:
           # a previous run already bumped the version and pushed to main
           git pull --rebase origin main
 
-          CHANGESET_FILES=$(ls .changeset/*.md 2>/dev/null | grep -v README || echo "")
+          # `.changeset/` porte toujours son README : les changesets sont les autres `.md`.
+          # `|| true` parce que `set -e` fait échouer l'assignation quand `find` ne trouve rien.
+          CHANGESET_FILES=$(find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' 2>/dev/null || true)
 
           if [ -n "$CHANGESET_FILES" ]; then
             echo "📦 Changesets détectés, mise à jour de la version..."
@@ -95,11 +97,11 @@ jobs:
             fi
 
             echo "✅ Version $CLEAN_VERSION créée, taguée et poussée avec succès"
-            echo "version=$CLEAN_VERSION" >> $GITHUB_OUTPUT
-            echo "has_release=true" >> $GITHUB_OUTPUT
+            echo "version=$CLEAN_VERSION" >> "$GITHUB_OUTPUT"
+            echo "has_release=true" >> "$GITHUB_OUTPUT"
           else
             CURRENT_VERSION=$(node -p "require('./package.json').version")
             echo "📋 Aucun changeset détecté, version actuelle: $CURRENT_VERSION"
-            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
-            echo "has_release=false" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+            echo "has_release=false" >> "$GITHUB_OUTPUT"
           fi

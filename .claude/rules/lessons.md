@@ -14,6 +14,8 @@ chantier du plugin `nina` sont dans `plugins/nina/LESSONS.md`.
 - Une fonction shell qui porte le nom d'un alias zsh (`g`, `gp`…) échoue en `parse error` : `function nom { … }` avec un nom improbable
 - `$var:x` applique le modificateur zsh `:x` : `git show "$B:src/…"` est devenu `…/64-apiproperty-hors-interfacesoller.ts` (`:s` substitue). Accolades avant un deux-points : `"${B}:src/…"`
 - zsh ne découpe **pas** une variable non quotée en mots : `set -- $spec` a mis `"repo 50"` entier dans `$1`, et six `gh api` ont répondu 404. Découper par expansion (`"${spec%%:*}"` / `"${spec##*:}"`) ou forcer avec `${=spec}`
+- Exclure un fichier par `grep -v NOM` exclut tout nom qui **contient** le motif : `ls .changeset/*.md | grep -v README` écartait aussi un changeset `README-des-transitions.md`, dont le bump était perdu sans rien signaler. Filtrer sur le nom exact (`find … ! -name 'README.md'`)
+- Sous `set -e`, `VAR=$(cmd)` arrête le script quand `cmd` échoue : une substitution qui a le droit de ne rien trouver se termine par `|| true`
 
 ## GitHub Actions
 
