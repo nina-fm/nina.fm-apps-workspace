@@ -63,7 +63,8 @@ jobs:
           git pull --rebase origin main
 
           # `.changeset/` porte toujours son README : les changesets sont les autres `.md`.
-          # `|| true` parce que `set -e` fait échouer l'assignation quand `find` ne trouve rien.
+          # `find` sort 0 quand il ne trouve rien, mais 1 quand `.changeset/` n'existe pas,
+          # et `set -e` ferait alors échouer l'assignation — d'où le `|| true`.
           CHANGESET_FILES=$(find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' 2>/dev/null || true)
 
           if [ -n "$CHANGESET_FILES" ]; then

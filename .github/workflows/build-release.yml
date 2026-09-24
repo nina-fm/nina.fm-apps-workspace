@@ -13,6 +13,10 @@ name: Build & Release
 # Aucun secret ne transite par les entrées : elles sont évaluées chez l'appelant et ne
 # portent que des `vars`. Le seul secret utilisé ici, `GITHUB_TOKEN`, est fourni
 # automatiquement — d'où l'absence de bloc `secrets:`.
+#
+# Le job appelant déclare `permissions: contents: write` et `packages: write` : les
+# permissions d'un workflow appelé sont intersectées avec le jeton que l'appelant accorde,
+# jamais élargies. Sans elles, le contrat reste valide et c'est le push de l'image qui échoue.
 
 on:
   workflow_call:
@@ -26,7 +30,7 @@ on:
         type: boolean
         default: false
       no-cache:
-        description: 'Reconstruire sans le cache de registre'
+        description: "Reconstruire sans le cache de registre — `inputs.no-cache || false` chez l'appelant, dont le contexte `inputs` est nul sur un `push`"
         type: boolean
         default: false
       target:
@@ -49,6 +53,9 @@ on:
       image:
         description: "Image poussée, sans tag (ghcr.io/<repo>)"
         value: ${{ jobs.build.outputs.image }}
+      image-version:
+        description: "Image poussée, taguée à la version (ghcr.io/<repo>:<version>)"
+        value: ${{ jobs.build.outputs.image-version }}
 
 jobs:
   build:
@@ -60,7 +67,8 @@ jobs:
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}
     outputs:
-      image: ghcr.io/${{ github.repository }}
+      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      image-version: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.version }}
     steps:
       # `CHANGELOG.md` est lu par les notes de release : le checkout est nécessaire même si
       # le build tire tout du contexte Docker.
@@ -123,6 +131,7 @@ jobs:
       # l'appelant est séparé, mais il attend ce job : sans cette garde, un échec ici le
       # sauterait encore.
       - name: Create GitHub Release
+        id: release
         if: inputs.has-release
         continue-on-error: true
         uses: softprops/action-gh-release@v3.0.3
@@ -134,3 +143,11 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # `continue-on-error` laisse le run vert : sans cette trace, rien ne dirait que la
+      # release manque. Le tag et l'image sont publiés de toute façon, elle se recrée à la main.
+      - name: Signaler une release manquée
+        if: steps.release.outcome == 'failure'
+        run: |
+          echo "::warning::Release ${{ inputs.version }} non créée — le tag et l'image sont publiés, la release se recrée à la main"
+          echo "⚠️ Release \`${{ inputs.version }}\` non créée. Le déploiement continue ; la relancer depuis le tag." >> "$GITHUB_STEP_SUMMARY"

@@ -112,11 +112,19 @@ repos d'apps en `nina-fm/nina.fm-apps-workspace/.github/workflows/<nom>.yml@main
 | `build-release.yml` | Build de l'image, push sur ghcr.io, GitHub Release |
 | `cleanup.yml` | Ménage Docker sur le serveur, après déploiement ou hebdomadaire |
 
-**Un `deploy.yml` d'app** enchaîne donc `validate` → `versioning` → `build` → `deploy` →
+**Un `deploy.yml` d'app** enchaîne donc `quality` → `versioning` → `build` → `deploy` →
 `post-deploy`, et ne garde en propre que `deploy` : le script SSH, seul à porter les
 secrets, les ports et le healthcheck du repo. `build-release.yml` prend `version`,
 `has-release`, `no-cache`, `target`, `build-args`, `image-title` et `image-description` —
 tous évalués chez l'appelant, et donc sans secret.
+
+Deux choses s'écrivent **chez l'appelant**, qu'aucune erreur de contrat ne signale :
+
+- ses `permissions: contents: write` et `packages: write` sur le job `build` — les
+  permissions d'un workflow appelé sont intersectées avec le jeton accordé, jamais
+  élargies, et leur absence se manifeste en échec de push d'image
+- `no-cache: ${{ inputs.no-cache || false }}` — sur un `push`, le contexte `inputs` de
+  l'appelant est nul, et `${{ inputs.no-cache }}` seul rend `''` pour une entrée booléenne
 
 La séparation `build` / `deploy` en deux jobs est délibérée : tant que la GitHub Release
 vivait dans le job de déploiement, un 500 de l'API GitHub sur les notes de release sautait
