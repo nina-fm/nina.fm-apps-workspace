@@ -100,6 +100,31 @@ Pour les features Mixtaper, seuls ces modules NestJS sont concernés :
   - **CI** : sur chaque PR dans mixtaper, seulement au push sur `main` ailleurs (api#62, faceb#49, website#60)
   - **Hook Claude Code** : seul mixtaper en a un, qui passe ESLint sur chaque fichier écrit (`.claude/scripts/lint-on-write.sh`) ; aucun ne lance de type-check
 
+### Workflows réutilisables
+
+`.github/workflows/` de ce repo expose quatre workflows `workflow_call`, appelés par les
+repos d'apps en `nina-fm/nina.fm-apps-workspace/.github/workflows/<nom>.yml@main` :
+
+| Workflow | Ce qu'il fait |
+|---|---|
+| `node-validate.yml` | Install, type-check, lint, tests, Codecov, métriques Grafana |
+| `release.yml` | Changesets : bump, `CHANGELOG.md`, commit et tag ; rend `version` et `has_release` |
+| `build-release.yml` | Build de l'image, push sur ghcr.io, GitHub Release |
+| `cleanup.yml` | Ménage Docker sur le serveur, après déploiement ou hebdomadaire |
+
+**Un `deploy.yml` d'app** enchaîne donc `validate` → `versioning` → `build` → `deploy` →
+`post-deploy`, et ne garde en propre que `deploy` : le script SSH, seul à porter les
+secrets, les ports et le healthcheck du repo. `build-release.yml` prend `version`,
+`has-release`, `no-cache`, `target`, `build-args`, `image-title` et `image-description` —
+tous évalués chez l'appelant, et donc sans secret.
+
+La séparation `build` / `deploy` en deux jobs est délibérée : tant que la GitHub Release
+vivait dans le job de déploiement, un 500 de l'API GitHub sur les notes de release sautait
+la mise en prod alors que le tag et l'image étaient publiés (#48).
+
+Le runner est **pinné** (`runs-on: ubuntu-24.04`), pas `ubuntu-latest`, qui bascule sur
+Ubuntu 26 le 19 octobre 2026 : la montée doit être volontaire, et se teste sur une branche.
+
 ### Versioning avec Changesets
 
 Tous les repos utilisent `@changesets/cli` avec `"commit": false`.
@@ -227,7 +252,7 @@ Les cinq repos de code sont clonés **dans** le workspace par `setup.sh`, et ign
 ├── docker-compose.dev.yml             ← Compose global (inclut api + auth)
 ├── .gitignore                         ← Ignore les repos de code
 ├── setup.sh                           ← Script d'installation sur nouvelle machine
-├── .github/workflows/                 ← Workflows réutilisables (node-validate, release, cleanup)
+├── .github/workflows/                 ← Workflows réutilisables (node-validate, release, build-release, cleanup)
 ├── .claude-plugin/
 │   └── marketplace.json               ← Marketplace nina.fm
 ├── plugins/
