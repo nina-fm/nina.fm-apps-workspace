@@ -13,6 +13,16 @@ chantier du plugin `nina` sont dans `plugins/nina/LESSONS.md`.
 - Un remplacement qui lit son texte dans une variable (`perl … $ENV{SEC}`) remplace par du vide quand la variable manque, sans rien signaler : une section de corps de PR a ainsi été effacée puis publiée. `open … or die` en tête, et relire le fichier (`grep` sur la section) avant publication
 - Une fonction shell qui porte le nom d'un alias zsh (`g`, `gp`…) échoue en `parse error` : `function nom { … }` avec un nom improbable
 - `$var:x` applique le modificateur zsh `:x` : `git show "$B:src/…"` est devenu `…/64-apiproperty-hors-interfacesoller.ts` (`:s` substitue). Accolades avant un deux-points : `"${B}:src/…"`
+- zsh ne découpe **pas** une variable non quotée en mots : `set -- $spec` a mis `"repo 50"` entier dans `$1`, et six `gh api` ont répondu 404. Découper par expansion (`"${spec%%:*}"` / `"${spec##*:}"`) ou forcer avec `${=spec}`
+- Exclure un fichier par `grep -v NOM` exclut tout nom qui **contient** le motif : `ls .changeset/*.md | grep -v README` écartait aussi un changeset `README-des-transitions.md`, dont le bump était perdu sans rien signaler. Filtrer sur le nom exact (`find … ! -name 'README.md'`)
+- Sous `set -e`, `VAR=$(cmd)` arrête le script quand `cmd` échoue : une substitution qui a le droit de ne rien trouver se termine par `|| true`
+
+## GitHub Actions
+
+- Un `workflow_call` se vérifie avant d'être appelé pour de bon : `actionlint` sur un appelant jetable qui le référence en chemin local (`uses: ./.github/workflows/x.yml`) valide inputs requis, inputs inconnus et outputs consommés. Le prouver en passant aussi un appelant fautif — sinon le « OK » ne dit rien. Il ne voit pas les types (`no-cache: oui` passe)
+- Une `description:` d'input est évaluée comme n'importe quel champ : y documenter l'expression attendue de l'appelant en `${{ … }}` la fait rejeter (`context "inputs" is not allowed here`). L'écrire nue, sans les accolades
+- `inputs.<x>` d'un input `type: boolean` est un **booléen** : `inputs.x == 'true'` est toujours faux, et quatre `deploy.yml` avaient ainsi un `no-cache` inopérant. Seul `github.event.inputs.<x>` est une chaîne
+- `runs-on: ubuntu-latest` fait subir les bascules d'image : pinner (`ubuntu-24.04`) et monter volontairement
 
 ## rtk
 
@@ -35,6 +45,9 @@ dit ce que le hook en fera.
 Le code ne vit pas au même endroit partout : faceb (Nuxt) est dans `app/`, mixtaper dans `src/`. Un `grep … src` sur tous les repos a conclu que faceb n'utilisait pas les types `*OrmEntity`, alors que 21 de ses fichiers les importent. Chercher depuis la racine du repo (`git ls-files | xargs grep`).
 
 ## gh
+
+`gh api … -f champ=123` envoie une **chaîne** : `POST …/sub_issues -f sub_issue_id=…` est
+refusé en `not of type integer`. `-F` type la valeur.
 
 Un corps de commentaire, d'issue ou de PR se passe par `--body-file`, écrit par heredoc
 `<<'EOF'` : en argument, zsh exécute les backticks et casse sur les apostrophes — un

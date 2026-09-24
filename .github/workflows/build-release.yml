@@ -1,0 +1,153 @@
+name: Build & Release
+
+# Construit l'image Docker d'une app, la pousse sur ghcr.io et publie la GitHub Release.
+#
+# Ce que les quatre `deploy.yml` faisaient à l'identique vit ici ; ce qui leur est propre —
+# le script SSH de déploiement, seul à porter leurs secrets, leurs ports et leur healthcheck —
+# reste chez eux, dans un job `deploy` qui suit celui-ci (`needs: [versioning, build]`).
+#
+# C'est cette séparation en deux jobs qui rend la release non bloquante : un 500 de l'API
+# GitHub sur les notes de release a déjà sauté une mise en prod (nina-fm/nina.fm-faceb, run
+# 35833991820), le tag et l'image étant pourtant publiés.
+#
+# Aucun secret ne transite par les entrées : elles sont évaluées chez l'appelant et ne
+# portent que des `vars`. Le seul secret utilisé ici, `GITHUB_TOKEN`, est fourni
+# automatiquement — d'où l'absence de bloc `secrets:`.
+#
+# Le job appelant déclare `permissions: contents: write` et `packages: write` : les
+# permissions d'un workflow appelé sont intersectées avec le jeton que l'appelant accorde,
+# jamais élargies. Sans elles, le contrat reste valide et c'est le push de l'image qui échoue.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version à taguer et à publier (sans préfixe v)'
+        type: string
+        required: true
+      has-release:
+        description: "Publier la GitHub Release — `needs.versioning.outputs.has_release == 'true'`"
+        type: boolean
+        default: false
+      no-cache:
+        description: "Reconstruire sans le cache de registre — `inputs.no-cache || false` chez l'appelant, dont le contexte `inputs` est nul sur un `push`"
+        type: boolean
+        default: false
+      target:
+        description: "Étage du Dockerfile à construire — vide pour le dernier"
+        type: string
+        default: ''
+      build-args:
+        description: 'Arguments de build, un par ligne (KEY=value)'
+        type: string
+        default: ''
+      image-title:
+        description: "Label OCI `title` de l'image"
+        type: string
+        required: true
+      image-description:
+        description: "Label OCI `description` de l'image"
+        type: string
+        required: true
+    outputs:
+      image:
+        description: "Image poussée, sans tag (ghcr.io/<repo>)"
+        value: ${{ jobs.build.outputs.image }}
+      image-version:
+        description: "Image poussée, taguée à la version (ghcr.io/<repo>:<version>)"
+        value: ${{ jobs.build.outputs.image-version }}
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      packages: write
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
+    outputs:
+      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      image-version: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.version }}
+    steps:
+      # `CHANGELOG.md` est lu par les notes de release : le checkout est nécessaire même si
+      # le build tire tout du contexte Docker.
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: refs/heads/main
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=${{ inputs.image-title }}
+            org.opencontainers.image.description=${{ inputs.image-description }}
+            org.opencontainers.image.vendor=Nina.fm
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=MIT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # `inputs.no-cache` est un vrai booléen : le comparer à la chaîne 'true' donnait
+      # toujours faux, et trois des quatre repos écrivaient donc le cache alors qu'on
+      # demandait un rebuild sans cache.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile
+          target: ${{ inputs.target }}
+          push: true
+          no-cache: ${{ inputs.no-cache }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: ${{ !inputs.no-cache && format('type=registry,ref={0}/{1}:buildcache,mode=max', env.REGISTRY, env.IMAGE_NAME) || '' }}
+          build-args: ${{ inputs.build-args }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.version }}
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+            org.opencontainers.image.version=${{ inputs.version }}
+            org.opencontainers.image.created={{date 'YYYY-MM-DDTHH:mm:ssZ'}}
+
+      # Les notes de release ne conditionnent pas la mise en prod. Le job `deploy` de
+      # l'appelant est séparé, mais il attend ce job : sans cette garde, un échec ici le
+      # sauterait encore.
+      - name: Create GitHub Release
+        id: release
+        if: inputs.has-release
+        continue-on-error: true
+        uses: softprops/action-gh-release@v3.0.3
+        with:
+          tag_name: ${{ inputs.version }}
+          name: Release ${{ inputs.version }}
+          body_path: CHANGELOG.md
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # `continue-on-error` laisse le run vert : sans cette trace, rien ne dirait que la
+      # release manque. Le tag et l'image sont publiés de toute façon, elle se recrée à la main.
+      - name: Signaler une release manquée
+        if: steps.release.outcome == 'failure'
+        run: |
+          echo "::warning::Release ${{ inputs.version }} non créée — le tag et l'image sont publiés, la release se recrée à la main"
+          echo "⚠️ Release \`${{ inputs.version }}\` non créée. Le déploiement continue ; la relancer depuis le tag." >> "$GITHUB_STEP_SUMMARY"
