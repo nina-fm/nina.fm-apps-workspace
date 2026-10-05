@@ -22,7 +22,9 @@ chantier du plugin `nina` sont dans `plugins/nina/LESSONS.md`.
 - Un `workflow_call` se vérifie avant d'être appelé pour de bon : `actionlint` sur un appelant jetable qui le référence en chemin local (`uses: ./.github/workflows/x.yml`) valide inputs requis, inputs inconnus et outputs consommés. Le prouver en passant aussi un appelant fautif — sinon le « OK » ne dit rien. Il ne voit pas les types (`no-cache: oui` passe)
 - Une `description:` d'input est évaluée comme n'importe quel champ : y documenter l'expression attendue de l'appelant en `${{ … }}` la fait rejeter (`context "inputs" is not allowed here`). L'écrire nue, sans les accolades
 - `inputs.<x>` d'un input `type: boolean` est un **booléen** : `inputs.x == 'true'` est toujours faux, et quatre `deploy.yml` avaient ainsi un `no-cache` inopérant. Seul `github.event.inputs.<x>` est une chaîne
+- Un `workflow_dispatch` lance tous les jobs dont le `if` ne regarde que la ref : dans auth#13, le dispatch « rollback » déployait aussi, et le dump pré-déploiement pris en parallèle devenait celui que le rollback restaurait. Un job propre à une valeur d'input, les autres l'excluent
 - `runs-on: ubuntu-latest` fait subir les bascules d'image : pinner (`ubuntu-24.04`) et monter volontairement
+- Toucher un `deploy.yml` déploie pour de bon, `docker compose pull` compris : le simple pin des runners d'auth (auth#9) a fait tirer `supertokens-postgresql:latest` 12.2.0, qui a refusé de démarrer faute de migration manuelle — 10 min de 502 sur l'auth de toutes les apps. Avant de merger un changement de CI, vérifier que les images du compose de prod sont épinglées
 
 ## rtk
 
