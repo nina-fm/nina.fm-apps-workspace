@@ -9,6 +9,8 @@ $ARGUMENTS
 
 Si `$ARGUMENTS` contient un numéro de PR (ex. `42`), relire le diff de cette PR et publier la review en commentaire à la fin. Sinon, relire le diff local de la branche courante, sans rien publier.
 
+**Auto-review** — la PR est la nôtre quand `gh pr view N --json author --jq .author.login` vaut `gh api user --jq .login` : ne rien publier, présenter la review dans le terminal, puis corriger soi-même sur la branche les problèmes relevés. Une review postée sur sa propre PR a dû être supprimée (mixtaper#84).
+
 La review est rédigée en français.
 
 ---
@@ -115,7 +117,9 @@ _Sans problème : « Aucun problème relevé. »_
 
 ---
 
-### Étape 5 — Publier sur la PR (si un numéro est donné)
+### Étape 5 — Publier sur la PR (si un numéro est donné, hors auto-review)
+
+En auto-review, sauter cette étape : corriger les problèmes du tableau sur la branche.
 
 Écrire la review dans un fichier par heredoc à guillemets simples, puis la publier — un corps passé en argument se casse sur les apostrophes et les backticks :
 
