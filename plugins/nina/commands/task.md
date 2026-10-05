@@ -43,7 +43,7 @@ git rev-parse HEAD "origin/$DEFAULT"; git status --short
 
 Si `HEAD` n'est pas `origin/$DEFAULT`, ou s'il reste des modifications, ne pas changer de branche : constater dans un worktree détaché (`git worktree add --detach <dossier temporaire> "origin/$DEFAULT"`), retiré à la fin du constat (`git worktree remove`).
 
-Mesurer plutôt qu'observer, et garder les valeurs pour la PR. Un ticket qui ne se reproduit plus se commente et se ferme : le dire à l'utilisateur, et s'arrêter.
+Mesurer plutôt qu'observer, et garder les valeurs pour la PR. Le constat **déclenche** le défaut, dans la condition que décrit l'issue : mesurer que la prod va bien n'en est pas un. Pour #81 de mixtaper, relever le jeton de prod dans le bundle disait seulement que le défaut était latent ; le constat, c'était un build vert sur `main` avec les `vars` absentes, qui livrait le jeton de dev. Un ticket qui ne se reproduit plus se commente et se ferme : le dire à l'utilisateur, et s'arrêter.
 
 ---
 
