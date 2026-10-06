@@ -53,9 +53,6 @@ on:
       image:
         description: "Image poussée, sans tag (ghcr.io/<repo>)"
         value: ${{ jobs.build.outputs.image }}
-      image-version:
-        description: "Image poussée, taguée à la version (ghcr.io/<repo>:<version>)"
-        value: ${{ jobs.build.outputs.image-version }}
 
 jobs:
   build:
@@ -68,7 +65,6 @@ jobs:
       IMAGE_NAME: ${{ github.repository }}
     outputs:
       image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-      image-version: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.version }}
     steps:
       # `CHANGELOG.md` est lu par les notes de release : le checkout est nécessaire même si
       # le build tire tout du contexte Docker.
