@@ -55,6 +55,11 @@ Un corps de commentaire, d'issue ou de PR se passe par `--body-file`, écrit par
 `<<'EOF'` : en argument, zsh exécute les backticks et casse sur les apostrophes — un
 `'…'` rebouché à la main a fait poster des corps vides.
 
+Un `Closes #N` dans un **message de commit** ferme l'issue au squash, quoi que dise le corps
+de la PR : #55, dont une moitié vivait dans un autre repo, a été fermée par le merge de #58
+alors que le corps n'en portait qu'un `Refs`. Retirer le mot-clé des deux endroits, et
+fermer à la main ce qu'une PR ne solde pas — une référence cross-repo ne ferme jamais.
+
 Une collection se lit avec `--paginate`, sans quoi on n'en voit que les 30 premiers.
 `gh api … --paginate --jq` filtre page par page et rend plusieurs JSON à la suite ;
 `--slurp` rend le tableau des pages, mais **refuse `--jq`** (« the `--slurp` option is
