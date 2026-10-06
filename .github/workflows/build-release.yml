@@ -90,9 +90,19 @@ jobs:
             type=ref,event=pr
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
+          # Aucun label ne se déclare ailleurs qu'ici. `created` et `url`, eux, ne se
+          # déclarent pas du tout : `metadata-action` les pose seul. `version` est le seul
+          # à devoir être redéclaré, parce qu'il le calcule depuis `type=ref,event=branch`
+          # (priorité 600, contre 200 pour `type=raw`) et sortirait donc `main` ; un label
+          # déclaré l'emporte sur celui qu'il génère.
+          #
+          # Les redéclarer dans `build-push-action` ajoutait un second `--label` de même
+          # clé, et le gabarit `{{date …}}`, qui n'est interprété qu'ici, partait tel quel
+          # dans l'image — le dernier `--label` gagnant.
           labels: |
             org.opencontainers.image.title=${{ inputs.image-title }}
             org.opencontainers.image.description=${{ inputs.image-description }}
+            org.opencontainers.image.version=${{ inputs.version }}
             org.opencontainers.image.vendor=Nina.fm
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -118,10 +128,7 @@ jobs:
           tags: |
             ${{ steps.meta.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ inputs.version }}
-          labels: |
-            ${{ steps.meta.outputs.labels }}
-            org.opencontainers.image.version=${{ inputs.version }}
-            org.opencontainers.image.created={{date 'YYYY-MM-DDTHH:mm:ssZ'}}
+          labels: ${{ steps.meta.outputs.labels }}
 
       # Les notes de release ne conditionnent pas la mise en prod. Le job `deploy` de
       # l'appelant est séparé, mais il attend ce job : sans cette garde, un échec ici le
