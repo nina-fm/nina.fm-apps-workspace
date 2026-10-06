@@ -92,6 +92,14 @@ jobs:
           GRAFANA_METRICS_USER: ${{ secrets.GRAFANA_METRICS_USER }}
           GRAFANA_METRICS_TOKEN: ${{ secrets.GRAFANA_METRICS_TOKEN }}
         run: |
+          # Ce step est non bloquant (voir le dernier `echo`). Le rapport absent doit donc
+          # se signaler sans faire échouer le job — et sans pousser une valeur fausse, ce
+          # que faisait l'ancien `cat … | jq` : il sortait 0 avec `COVERAGE` vide, et
+          # `value=` partait vers Grafana sans que rien ne le dise.
+          if [ ! -f coverage/coverage-summary.json ]; then
+            echo "coverage-summary.json absent — métrique non poussée (non-blocking)"
+            exit 0
+          fi
           COVERAGE=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
           echo "Pushing coverage=${COVERAGE} for app=${{ github.event.repository.name }}"
           HTTP_STATUS=$(curl -s -o /tmp/grafana_push_response.txt -w "%{http_code}" \

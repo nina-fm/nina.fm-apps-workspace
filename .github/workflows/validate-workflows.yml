@@ -1,31 +1,33 @@
 name: Validate Workflows
 
 # Ce repo n'avait aucune CI, alors que ses quatre `workflow_call` sont consommés en `@main`
-# par les cinq autres : une erreur de contrat n'y était pas visible sur la pull request, elle
-# cassait le déploiement du premier repo qui appelait `@main`.
+# par les cinq autres : une erreur de contrat n'y était pas visible au moment de la relecture,
+# elle cassait le déploiement du premier repo qui appelait `@main`.
 #
-# Le protocole que `.claude/rules/lessons.md` impose à la main tourne donc ici :
-# `actionlint`, puis un appelant jetable qui référence les workflows en chemin local, et un
-# appelant fautif pour prouver que le contrôle mord. Les deux appelants vivent dans
-# `.github/workflow-tests/`, hors du dossier que GitHub exécute.
+# Le protocole que `.claude/rules/lessons.md` imposait à la main tourne donc ici :
+# `actionlint`, puis un appelant committé qui référence les workflows en chemin local, puis un
+# appelant fautif dont on **vérifie les erreurs une par une**. Les deux appelants vivent dans
+# `.github/workflow-tests/`, dossier que GitHub ne lit jamais.
 #
 # `actionlint` résout les `uses: ./…` depuis la racine du dépôt **git** : le checkout est donc
 # nécessaire, et un lint lancé hors d'un dépôt ne vérifierait aucun contrat tout en sortant 0.
 
 on:
   pull_request:
-    paths:
-      - '.github/workflows/**'
-      - '.github/workflow-tests/**'
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/**'
-      - '.github/workflow-tests/**'
   workflow_dispatch:
+
+# Pas de filtre `paths` : le job coûte quelques secondes, et un filtre laisserait le check
+# éternellement `pending` sur les PR qui ne touchent pas `.github/`, ce qui interdirait de le
+# rendre obligatoire à la fusion.
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   ACTIONLINT_VERSION: 1.7.12
@@ -33,31 +35,81 @@ env:
 jobs:
   actionlint:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # Les appelants de test ne sont inertes que parce qu'ils sont hors de
+      # `.github/workflows/`. Déplacé là, l'appelant *valide* linterait proprement et
+      # deviendrait un workflow réel, qui pousse un tag puis une image. On refuse donc le
+      # déplacement explicitement, plutôt que de confier l'invariante à un commentaire.
+      - name: Les appelants de test restent hors du dossier exécuté
+        run: |
+          if compgen -G '.github/workflows/appelant-*' > /dev/null; then
+            echo "::error::Un appelant de test est dans .github/workflows/ : il y deviendrait exécutable."
+            exit 1
+          fi
+
       # Version épinglée : une montée d'actionlint peut ajouter des règles, et doit donc être
-      # volontaire plutôt que subie au prochain run.
+      # volontaire. Le script est téléchargé puis exécuté en deux temps, avec `--retry`, pour
+      # qu'un hoquet réseau échoue franchement — `bash <(curl …)` sort 0 sur un 404, vérifié.
       - name: Install actionlint
         run: |
-          bash <(curl -sSfL "https://raw.githubusercontent.com/rhysd/actionlint/v${ACTIONLINT_VERSION}/scripts/download-actionlint.bash") "$ACTIONLINT_VERSION"
+          curl -sSfL --retry 3 --retry-all-errors \
+            -o /tmp/download-actionlint.bash \
+            "https://raw.githubusercontent.com/rhysd/actionlint/v${ACTIONLINT_VERSION}/scripts/download-actionlint.bash"
+          bash /tmp/download-actionlint.bash "$ACTIONLINT_VERSION"
           ./actionlint -version
 
+      # Sans argument, actionlint scanne `.github/workflows/` — y compris un futur `.yaml`,
+      # qu'un glob `*.yml` laisserait passer — et ne touche pas à `.github/workflow-tests/`.
       - name: Lint des workflows
-        run: ./actionlint -color .github/workflows/*.yml
+        run: ./actionlint -color
 
       - name: Contrat des workflow_call — l'appelant valide doit passer
         run: ./actionlint -color .github/workflow-tests/appelant-valide.yml
 
-      # Sans ce step, un « OK » ne dirait rien : un lint qui ne résout pas les chemins locaux
-      # sort 0 sur n'importe quoi. On exige donc un échec, et on l'affiche.
+      # Ce step garantit la valeur des deux précédents : un lint qui ne résoudrait plus les
+      # chemins locaux sort 0 sur n'importe quoi. Il ne suffit donc pas d'exiger un code non
+      # nul — un fautif renommé, vidé ou au YAML cassé en produirait un aussi, et le step
+      # passerait en affichant « 0 erreur ». On vérifie le compte **et** chaque message.
       - name: Contrat des workflow_call — l'appelant fautif doit échouer
+        env:
+          FAUTIF: .github/workflow-tests/appelant-fautif.yml
+          ERREURS_ATTENDUES: '7'
         run: |
-          if ./actionlint .github/workflow-tests/appelant-fautif.yml > /tmp/fautif.log 2>&1; then
+          test -f "$FAUTIF" || { echo "::error::$FAUTIF est absent : le contrôle de contrat n'a plus de témoin."; exit 1; }
+
+          if ./actionlint "$FAUTIF" > /tmp/fautif.log 2>&1; then
             echo "::error::L'appelant fautif est passé : le contrôle de contrat ne mord plus."
-            echo "Attendu : inputs requis manquants, input inconnu, output inexistant."
             exit 1
           fi
-          echo "✅ Rejeté comme attendu, $(grep -cE '^\.github' /tmp/fautif.log) erreur(s) :"
+
+          n=$(grep -cE '^\.github' /tmp/fautif.log)
+          if [ "$n" -ne "$ERREURS_ATTENDUES" ]; then
+            echo "::error::$n erreur(s) relevée(s) au lieu de $ERREURS_ATTENDUES attendue(s)."
+            echo "Si c'est voulu, ajuster ERREURS_ATTENDUES ; sinon, le contrôle a perdu de sa portée."
+            cat /tmp/fautif.log
+            exit 1
+          fi
+
+          # Une catégorie par assertion : un code non nul ne dit pas *laquelle* mord encore.
+          for attendu in \
+            'input "version" is required' \
+            'input "image-description" is required' \
+            'input "image-title" is required' \
+            'input "image-titel" is not defined' \
+            'input "sauter-la-ci" is not defined' \
+            'secret "CODECOV_TOKENN" is not defined' \
+            'property "image-version" is not defined'
+          do
+            grep -qF "$attendu" /tmp/fautif.log || {
+              echo "::error::Catégorie non détectée : $attendu"
+              cat /tmp/fautif.log
+              exit 1
+            }
+          done
+
+          echo "✅ Les $n erreurs attendues sont toutes relevées, une par catégorie :"
           cat /tmp/fautif.log

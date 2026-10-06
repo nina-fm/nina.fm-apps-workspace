@@ -54,3 +54,10 @@ jobs:
     uses: ./.github/workflows/release.yml
     with:
       sauter-la-ci: true
+
+  # Faute 5 — secret inconnu : `node-validate.yml` déclare quatre secrets, et un renommage
+  # casserait `nina.fm-api`, qui les transmet nommément. `actionlint` sait les contrôler.
+  secret-inconnu:
+    uses: ./.github/workflows/node-validate.yml
+    secrets:
+      CODECOV_TOKENN: ${{ secrets.CODECOV_TOKEN }}

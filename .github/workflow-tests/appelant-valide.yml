@@ -16,7 +16,10 @@ name: Appelant valide
 on: workflow_dispatch
 
 jobs:
-  # `node-validate.yml` — tous les inputs sont facultatifs, tous les secrets aussi.
+  # `node-validate.yml` — tous ses inputs sont facultatifs, et ses quatre secrets aussi. Ils
+  # sont néanmoins passés nommément : « facultatif » ne protège pas d'un **renommage**, que
+  # `actionlint` sait détecter (`secret "X" is not defined …`), et `nina.fm-api` les transmet
+  # ainsi plutôt que par `secrets: inherit`.
   quality:
     uses: ./.github/workflows/node-validate.yml
     with:
@@ -27,6 +30,11 @@ jobs:
       lcov-path: './coverage/lcov.info'
       upload-on-branch: main
       grafana-metrics-enabled: false
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      GRAFANA_METRICS_URL: ${{ secrets.GRAFANA_METRICS_URL }}
+      GRAFANA_METRICS_USER: ${{ secrets.GRAFANA_METRICS_USER }}
+      GRAFANA_METRICS_TOKEN: ${{ secrets.GRAFANA_METRICS_TOKEN }}
 
   # `release.yml` — rend `version` et `has_release`, consommés plus bas.
   versioning:
@@ -65,9 +73,12 @@ jobs:
           echo "has_release=${{ needs.versioning.outputs.has_release }}"
           echo "image=${{ needs.build.outputs.image }}"
 
-  # `cleanup.yml` — appelé avec son seul input.
+  # `cleanup.yml` — son seul input, et `secrets: inherit`, que `actionlint` ne sait pas
+  # exiger : il lit `SERVER_HOST`, `SERVER_USER` et `SSH_PRIVATE_KEY` sans les déclarer, donc
+  # seul `inherit` les lui transmet. Les quatre appelants réels le passent tous.
   post-deploy:
     needs: build
     uses: ./.github/workflows/cleanup.yml
     with:
       image-name: ghcr.io/${{ github.repository }}
+    secrets: inherit

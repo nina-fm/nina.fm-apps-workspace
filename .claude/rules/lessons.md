@@ -19,10 +19,12 @@ chantier du plugin `nina` sont dans `plugins/nina/LESSONS.md`.
 
 ## GitHub Actions
 
-- Un `workflow_call` se vérifie avant d'être appelé pour de bon : `actionlint` sur un appelant jetable qui le référence en chemin local (`uses: ./.github/workflows/x.yml`) valide inputs requis, inputs inconnus et outputs consommés. Le prouver en passant aussi un appelant fautif — sinon le « OK » ne dit rien. Il ne voit pas les types (`no-cache: oui` passe)
+- Les appelants qui vérifient les `workflow_call` du workspace sont **committés** dans `.github/workflow-tests/` (un valide, un fautif), et `validate-workflows.yml` les rejoue sur chaque PR : on les met à jour quand le contrat change, on n'en crée plus à la main. `actionlint` y valide inputs requis, inputs inconnus, **secrets** inconnus et outputs consommés ; il ne voit ni les types (`no-cache: oui` passe), ni la casse des noms d'inputs, ni les `permissions` de l'appelant
+- Exiger un code de sortie non nul ne prouve pas qu'une vérification mord : un témoin fautif renommé, vidé ou au YAML cassé en produit un aussi, et le contrôle passe en annonçant « 0 erreur ». Vérifier le **compte** attendu et la présence de **chaque** message
 - Une `description:` d'input est évaluée comme n'importe quel champ : y documenter l'expression attendue de l'appelant en `${{ … }}` la fait rejeter (`context "inputs" is not allowed here`). L'écrire nue, sans les accolades
 - `inputs.<x>` d'un input `type: boolean` est un **booléen** : `inputs.x == 'true'` est toujours faux, et quatre `deploy.yml` avaient ainsi un `no-cache` inopérant. Seul `github.event.inputs.<x>` est une chaîne
 - Un `workflow_dispatch` lance tous les jobs dont le `if` ne regarde que la ref : dans auth#13, le dispatch « rollback » déployait aussi, et le dump pré-déploiement pris en parallèle devenait celui que le rollback restaurait. Un job propre à une valeur d'input, les autres l'excluent
+- Un `actionlint` local vert n'annonce pas un CI vert, même à version égale : il délègue à **shellcheck**, qui n'est pas épinglé, et SC2002 (`useless cat`) est passé en option (`--list-optional` le nomme `useless-use-of-cat`) dans shellcheck 0.11.0 alors qu'il est actif sur l'image du runner. Un défaut de `node-validate.yml` est ainsi resté invisible en local
 - `runs-on: ubuntu-latest` fait subir les bascules d'image : pinner (`ubuntu-24.04`) et monter volontairement
 - Toucher un `deploy.yml` déploie pour de bon, `docker compose pull` compris : le simple pin des runners d'auth (auth#9) a fait tirer `supertokens-postgresql:latest` 12.2.0, qui a refusé de démarrer faute de migration manuelle — 10 min de 502 sur l'auth de toutes les apps. Avant de merger un changement de CI, vérifier que les images du compose de prod sont épinglées
 
