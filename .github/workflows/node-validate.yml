@@ -92,7 +92,7 @@ jobs:
           GRAFANA_METRICS_USER: ${{ secrets.GRAFANA_METRICS_USER }}
           GRAFANA_METRICS_TOKEN: ${{ secrets.GRAFANA_METRICS_TOKEN }}
         run: |
-          COVERAGE=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+          COVERAGE=$(jq -r '.total.lines.pct' coverage/coverage-summary.json)
           echo "Pushing coverage=${COVERAGE} for app=${{ github.event.repository.name }}"
           HTTP_STATUS=$(curl -s -o /tmp/grafana_push_response.txt -w "%{http_code}" \
             -u "${GRAFANA_METRICS_USER}:${GRAFANA_METRICS_TOKEN}" \
