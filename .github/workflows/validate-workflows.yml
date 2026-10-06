@@ -1,0 +1,63 @@
+name: Validate Workflows
+
+# Ce repo n'avait aucune CI, alors que ses quatre `workflow_call` sont consommés en `@main`
+# par les cinq autres : une erreur de contrat n'y était pas visible sur la pull request, elle
+# cassait le déploiement du premier repo qui appelait `@main`.
+#
+# Le protocole que `.claude/rules/lessons.md` impose à la main tourne donc ici :
+# `actionlint`, puis un appelant jetable qui référence les workflows en chemin local, et un
+# appelant fautif pour prouver que le contrôle mord. Les deux appelants vivent dans
+# `.github/workflow-tests/`, hors du dossier que GitHub exécute.
+#
+# `actionlint` résout les `uses: ./…` depuis la racine du dépôt **git** : le checkout est donc
+# nécessaire, et un lint lancé hors d'un dépôt ne vérifierait aucun contrat tout en sortant 0.
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - '.github/workflow-tests/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/workflow-tests/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ACTIONLINT_VERSION: 1.7.12
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # Version épinglée : une montée d'actionlint peut ajouter des règles, et doit donc être
+      # volontaire plutôt que subie au prochain run.
+      - name: Install actionlint
+        run: |
+          bash <(curl -sSfL "https://raw.githubusercontent.com/rhysd/actionlint/v${ACTIONLINT_VERSION}/scripts/download-actionlint.bash") "$ACTIONLINT_VERSION"
+          ./actionlint -version
+
+      - name: Lint des workflows
+        run: ./actionlint -color .github/workflows/*.yml
+
+      - name: Contrat des workflow_call — l'appelant valide doit passer
+        run: ./actionlint -color .github/workflow-tests/appelant-valide.yml
+
+      # Sans ce step, un « OK » ne dirait rien : un lint qui ne résout pas les chemins locaux
+      # sort 0 sur n'importe quoi. On exige donc un échec, et on l'affiche.
+      - name: Contrat des workflow_call — l'appelant fautif doit échouer
+        run: |
+          if ./actionlint .github/workflow-tests/appelant-fautif.yml > /tmp/fautif.log 2>&1; then
+            echo "::error::L'appelant fautif est passé : le contrôle de contrat ne mord plus."
+            echo "Attendu : inputs requis manquants, input inconnu, output inexistant."
+            exit 1
+          fi
+          echo "✅ Rejeté comme attendu, $(grep -cE '^\.github' /tmp/fautif.log) erreur(s) :"
+          cat /tmp/fautif.log
