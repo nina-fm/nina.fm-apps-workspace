@@ -1,0 +1,63 @@
+# Appelant fautif — n'est jamais exécuté, et doit **échouer** à la vérification.
+#
+# Son rôle est de prouver que le contrôle mord : `actionlint` qui ne dit rien sur
+# `appelant-valide.yml` ne prouve rien tant qu'on ne l'a pas vu rejeter quelque chose. Si ce
+# fichier passe, c'est le contrôle lui-même qui est cassé — et c'est ce que
+# `validate-workflows.yml` vérifie, en exigeant un code de sortie non nul.
+#
+# Chaque job porte une faute d'une catégorie différente. Les commentaires disent laquelle,
+# pour qu'on ne « corrige » pas ce fichier par réflexe.
+#
+# Ce que `actionlint` ne voit PAS, et qu'il ne faut donc pas espérer d'ici :
+#   - les types d'inputs : `no-cache: oui` passe sans broncher ;
+#   - les `permissions` manquantes sur le job appelant, qui ne se manifestent qu'à
+#     l'exécution, par un échec de push d'image ;
+#   - la casse des noms d'inputs : `skip-CI` pour `skip-ci` passe — vérifié, d'où la faute 4
+#     écrite avec un nom franchement différent plutôt qu'une simple majuscule.
+
+name: Appelant fautif
+on: workflow_dispatch
+
+jobs:
+  # Faute 1 — input requis omis : `version`, `image-description`.
+  input-requis-omis:
+    permissions:
+      contents: write
+      packages: write
+    uses: ./.github/workflows/build-release.yml
+    with:
+      image-title: Il manque version et image-description
+
+  # Faute 2 — input inconnu : `image-titel` au lieu de `image-title`.
+  input-inconnu:
+    permissions:
+      contents: write
+      packages: write
+    uses: ./.github/workflows/build-release.yml
+    with:
+      version: '1.0.0'
+      image-titel: Coquille volontaire
+      image-description: Coquille volontaire
+
+  # Faute 3 — output inexistant : `image-version` a été retiré du contrat (#57).
+  output-inexistant:
+    needs: input-inconnu
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "${{ needs.input-inconnu.outputs.image-version }}"
+
+  # Faute 4 — input inconnu sur un autre workflow partagé que `build-release.yml`, pour que
+  # le contrôle couvre aussi `release.yml` : `sauter-la-ci` n'existe pas.
+  input-inconnu-release:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
+    with:
+      sauter-la-ci: true
+
+  # Faute 5 — secret inconnu : `node-validate.yml` déclare quatre secrets, et un renommage
+  # casserait `nina.fm-api`, qui les transmet nommément. `actionlint` sait les contrôler.
+  secret-inconnu:
+    uses: ./.github/workflows/node-validate.yml
+    secrets:
+      CODECOV_TOKENN: ${{ secrets.CODECOV_TOKEN }}

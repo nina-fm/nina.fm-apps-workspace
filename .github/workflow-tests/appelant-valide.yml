@@ -1,0 +1,84 @@
+# Appelant de test — n'est jamais exécuté.
+#
+# Ce fichier vit hors de `.github/workflows/` pour que GitHub ne le voie pas : il n'apparaît
+# donc ni dans l'onglet Actions, ni dans la liste des workflows déclenchables. `actionlint`,
+# lui, résout les `uses: ./…` depuis la racine du dépôt git, où que soit le fichier appelant
+# — vérifié en plaçant le même appelant fautif aux deux endroits, rejeté dans les deux cas.
+#
+# Il décrit le contrat **attendu** des quatre workflows partagés : inputs requis, inputs
+# facultatifs, et outputs consommés. Un changement de contrat qui casserait les cinq repos
+# appelants fait échouer `validate-workflows.yml` sur la pull request.
+#
+# Son pendant, `appelant-fautif.yml`, prouve que la vérification mord : un « OK » obtenu sans
+# jamais voir d'échec ne dit rien.
+
+name: Appelant valide
+on: workflow_dispatch
+
+jobs:
+  # `node-validate.yml` — tous ses inputs sont facultatifs, et ses quatre secrets aussi. Ils
+  # sont néanmoins passés nommément : « facultatif » ne protège pas d'un **renommage**, que
+  # `actionlint` sait détecter (`secret "X" is not defined …`), et `nina.fm-api` les transmet
+  # ainsi plutôt que par `secrets: inherit`.
+  quality:
+    uses: ./.github/workflows/node-validate.yml
+    with:
+      node-version: '22'
+      type-check: true
+      lint-strict: false
+      codecov-enabled: true
+      lcov-path: './coverage/lcov.info'
+      upload-on-branch: main
+      grafana-metrics-enabled: false
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      GRAFANA_METRICS_URL: ${{ secrets.GRAFANA_METRICS_URL }}
+      GRAFANA_METRICS_USER: ${{ secrets.GRAFANA_METRICS_USER }}
+      GRAFANA_METRICS_TOKEN: ${{ secrets.GRAFANA_METRICS_TOKEN }}
+
+  # `release.yml` — rend `version` et `has_release`, consommés plus bas.
+  versioning:
+    needs: quality
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
+    with:
+      skip-ci: true
+
+  # `build-release.yml` — `version`, `image-title` et `image-description` sont requis ;
+  # le job appelant doit déclarer `contents: write` et `packages: write`.
+  build:
+    needs: versioning
+    permissions:
+      contents: write
+      packages: write
+    uses: ./.github/workflows/build-release.yml
+    with:
+      version: ${{ needs.versioning.outputs.version }}
+      has-release: ${{ needs.versioning.outputs.has_release == 'true' }}
+      no-cache: false
+      target: production
+      build-args: |
+        FOO=bar
+      image-title: Appelant de test
+      image-description: Vérifie le contrat des workflows partagés
+
+  # Consomme les outputs : une disparition ou un renommage est rejeté ici.
+  consommer-les-outputs:
+    needs: [versioning, build]
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo "version=${{ needs.versioning.outputs.version }}"
+          echo "has_release=${{ needs.versioning.outputs.has_release }}"
+          echo "image=${{ needs.build.outputs.image }}"
+
+  # `cleanup.yml` — son seul input, et `secrets: inherit`, que `actionlint` ne sait pas
+  # exiger : il lit `SERVER_HOST`, `SERVER_USER` et `SSH_PRIVATE_KEY` sans les déclarer, donc
+  # seul `inherit` les lui transmet. Les quatre appelants réels le passent tous.
+  post-deploy:
+    needs: build
+    uses: ./.github/workflows/cleanup.yml
+    with:
+      image-name: ghcr.io/${{ github.repository }}
+    secrets: inherit
