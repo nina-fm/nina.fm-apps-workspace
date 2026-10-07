@@ -1,0 +1,8 @@
+# Jetable (website#65) : faute volontaire pour vérifier qu'une PR rouge ne se merge plus.
+name: ZZ Recette 65
+on: workflow_dispatch
+jobs:
+  faute:
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "${{ github.evant.repository.name }}"
