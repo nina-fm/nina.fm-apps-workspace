@@ -15,6 +15,9 @@
 #   plan.sh move <url> <Horizon>   change l'Horizon d'une issue ; sur une epic, ses
 #                                  sous-issues ouvertes suivent
 #
+# add, start et move rangent une sous-issue dans le Project de son epic, et toute
+# autre issue dans celui de NINA_PROJECT.
+#
 # Le Project est la source de vérité. Ce script le rend visible sans rituel, et
 # permet d'y ranger une issue en une commande — sans quoi on l'oublie. En
 # affichage, il reste muet sans NINA_PROJECT, si gh est absent, hors ligne ou sans
@@ -144,10 +147,38 @@ set_field() {
   gh project item-edit --project-id "$PID" --id "$1" --field-id "$field" --single-select-option-id "$opt" >/dev/null
 }
 
-# Le Project visé est nommé : NINA_PROJECT vaut pour toute commande de la session,
-# y compris dans un sous-repo du workspace. Une issue qui relève du Project d'un autre
-# repo se range en le préfixant : depuis faceb, `NINA_PROJECT=2 plan.sh add` pour une
-# issue du workspace — sans quoi workspace#41 est partie dans Face B
+# Le Project d'une issue : celui où son epic est rangée, sinon celui de NINA_PROJECT.
+# Ranger une sous-issue dans le Project de la session y faisait entrer l'epic et ses
+# sous-issues des autres repos : celles de workspace#48 étaient dans quatre Projects
+# (#68). Une epic rangée nulle part, ou en plusieurs endroits, est refusée plutôt que
+# devinée. Une issue sans epic qui relève du Project d'un autre repo se range toujours
+# en préfixant : depuis faceb, `NINA_PROJECT=2 plan.sh add` pour une issue du workspace
+resolve_project() {
+  local url=$1 resource projects others
+  resource=$(gh api graphql -f url="$url" -f query='
+    query($url: URI!) { resource(url: $url) { ... on Issue {
+      projectItems(first: 20) { nodes { project { number owner { ... on Organization { login } } } } }
+      parent { url projectItems(first: 20) { nodes { project { number owner { ... on Organization { login } } } } } }
+    } } }' --jq .data.resource)
+  EPIC=$(jq -r '.parent.url // empty' <<<"$resource")
+  if [ -z "$EPIC" ]; then
+    [ -n "$PROJECT" ] || { echo "NINA_PROJECT absent : poser le numéro du Project dans le env du .claude/settings.json du repo" >&2; exit 2; }
+    return 0
+  fi
+  projects=$(jq -r --arg o "$OWNER" '[.parent.projectItems.nodes[].project
+    | select(.owner.login == $o) | .number] | unique | join(" ")' <<<"$resource")
+  case $(wc -w <<<"$projects" | tr -d ' ') in
+    1) PROJECT=$projects ;;
+    0) echo "epic $EPIC rangée dans aucun Project : la ranger d'abord, NINA_PROJECT=<n> plan.sh add $EPIC <Horizon>" >&2; exit 1 ;;
+    *) echo "epic $EPIC rangée dans plusieurs Projects ($projects) : n'en garder qu'un, celui de son repo" >&2; exit 1 ;;
+  esac
+  # Un rangement en trop se signale, il ne se retire pas : ce serait écrire dans un
+  # Project que personne n'a nommé
+  others=$(jq -r --arg o "$OWNER" --argjson p "$PROJECT" '[.projectItems.nodes[].project
+    | select(.owner.login == $o and .number != $p) | .number] | unique | join(" ")' <<<"$resource")
+  [ -z "$others" ] || echo "$url aussi rangée hors du Project de son epic, à en retirer : $others" >&2
+}
+
 add() {
   local url=$1 horizon=$2 item
   option_id Horizon "$horizon" >/dev/null
@@ -176,7 +207,7 @@ move() {
 }
 
 start() {
-  local url=$1 item epic
+  local url=$1 item
   # Les deux options sont vérifiées avant d'ajouter l'issue : sinon un Project qui
   # nomme son Status autrement la laisserait ajoutée, sans Status ni Horizon
   option_id Status "In Progress" >/dev/null
@@ -185,17 +216,16 @@ start() {
   set_field "$item" Status "In Progress"
   set_field "$item" Horizon Maintenant
   echo "$url → In Progress, Maintenant (Project $PROJECT $TITLE)"
-  # Sans epic, l'API répond 404 et gh écrit le corps de l'erreur sur la sortie standard
-  epic=$(gh api "repos/${url#https://github.com/}/parent" --jq .html_url 2>/dev/null) || return 0
-  move "$epic" Maintenant
+  # L'epic, lue par resolve_project, est rangée dans ce même Project
+  [ -z "$EPIC" ] || move "$EPIC" Maintenant
 }
 
-# Refus avant tout appel à gh : arguments, URL d'issue, NINA_PROJECT
+# Refus avant tout appel à gh : arguments, URL d'issue. Puis le Project de l'issue
 check() {
   local n=$1 usage=$2 url=$3
   [ "$n" -eq "$(wc -w <<<"$usage")" ] || { echo "usage : plan.sh $usage" >&2; exit 2; }
   [[ $url =~ ^https://github\.com/[^/]+/[^/]+/issues/[0-9]+$ ]] || { echo "URL d'issue attendue : $url" >&2; exit 2; }
-  [ -n "$PROJECT" ] || { echo "NINA_PROJECT absent : poser le numéro du Project dans le env du .claude/settings.json du repo" >&2; exit 2; }
+  resolve_project "$url"
 }
 
 case "${1:-show}" in

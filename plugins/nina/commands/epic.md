@@ -117,6 +117,6 @@ Ne créer aucune branche, n'écrire aucun code et ne pas lancer `/nina:task` de 
    ```bash
    plan.sh add <url> <Horizon>   # Maintenant, Ensuite, Plus tard, Différé, Au fil de l'eau
    ```
-   Pour une epic déjà rangée, reprendre son Horizon ; `plan.sh move <url de l'epic> <Horizon>` le change en entraînant ses sous-issues ouvertes. `plan.sh add` nomme le Project visé : vérifier que c'est celui de l'epic. Une session garde le `NINA_PROJECT` du repo où elle a été lancée ; pour un autre Project, `NINA_PROJECT=<n> plan.sh add …` (`gh project list --owner nina-fm` donne les numéros). Sans `NINA_PROJECT`, sauter cette étape et le dire.
+   L'epic se range d'abord, dans le Project de son repo : une session garde le `NINA_PROJECT` du repo où elle a été lancée ; pour un autre Project, `NINA_PROJECT=<n> plan.sh add …` (`gh project list --owner nina-fm` donne les numéros). Ses sous-issues, une fois rattachées, vont d'elles-mêmes dans ce Project-là, sans préfixe. Pour une epic déjà rangée, reprendre son Horizon ; `plan.sh move <url de l'epic> <Horizon>` le change en entraînant ses sous-issues ouvertes. Sans `NINA_PROJECT`, sauter cette étape et le dire.
 
 Donner ensuite l'URL de l'epic et demander par quelle sous-issue commencer. Chacune se démarre dans une nouvelle session avec `/nina:task #N` — l'utilisateur décide de la suite.
