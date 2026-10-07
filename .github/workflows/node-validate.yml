@@ -83,6 +83,24 @@ jobs:
       - name: Run tests
         run: pnpm test:coverage
 
+      # Un envoi sauté faute de secret ne laisse sinon aucune trace : un `deploy.yml` qui
+      # cesserait de transmettre un secret arrêterait les envois sans que rien ne le dise.
+      - name: Signaler un envoi sauté faute de secret
+        if: >-
+          github.ref == format('refs/heads/{0}', inputs.upload-on-branch)
+          && ((inputs.codecov-enabled && env.HAS_CODECOV_TOKEN != 'true')
+          || (inputs.grafana-metrics-enabled && env.HAS_GRAFANA_SECRETS != 'true'))
+        env:
+          CODECOV_ENABLED: ${{ inputs.codecov-enabled }}
+          GRAFANA_ENABLED: ${{ inputs.grafana-metrics-enabled }}
+        run: |
+          if [ "$CODECOV_ENABLED" = true ] && [ "$HAS_CODECOV_TOKEN" != true ]; then
+            echo "::notice::Envoi Codecov sauté : CODECOV_TOKEN n'a pas été transmis."
+          fi
+          if [ "$GRAFANA_ENABLED" = true ] && [ "$HAS_GRAFANA_SECRETS" != true ]; then
+            echo "::notice::Envoi Grafana sauté : un des secrets GRAFANA_METRICS_* n'a pas été transmis."
+          fi
+
       - name: Upload coverage to Codecov
         if: inputs.codecov-enabled && github.ref == format('refs/heads/{0}', inputs.upload-on-branch) && env.HAS_CODECOV_TOKEN == 'true'
         uses: codecov/codecov-action@v7
