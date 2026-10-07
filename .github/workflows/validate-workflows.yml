@@ -33,6 +33,9 @@ env:
   ACTIONLINT_VERSION: 1.7.12
 
 jobs:
+  # L'id de ce job est le nom du check exigé par le ruleset de `main` (website#65) : le
+  # renommer ne casse rien ici, mais le check attendu ne se rapporterait plus jamais et
+  # toute pull request resterait bloquée en attente. Changer les deux ensemble.
   actionlint:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
