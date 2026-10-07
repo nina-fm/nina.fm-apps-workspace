@@ -56,7 +56,7 @@ gh issue comment <url> --body-file <fichier>
 gh issue close <url> --reason "not planned"   # completed si faite ailleurs, duplicate --duplicate-of <url> pour un doublon
 ```
 
-Chaque sortie de `plan.sh` nomme le Project visé : vérifier que c'est celui de la revue.
+Chaque sortie de `plan.sh` nomme le Project visé : celui de la revue pour une issue qui y est rangée. Une sous-issue d'une epic rangée ailleurs s'écrit dans le Project de son epic, c'est voulu ; tout autre Project est une anomalie à signaler.
 
 ---
 

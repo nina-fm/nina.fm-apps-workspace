@@ -144,7 +144,7 @@ git fetch origin "$DEFAULT" && git checkout --no-track -b <type>/<slug> "origin/
 
 La branche part de `origin/$DEFAULT` fraîchement récupérée : c'est le « sync avant de tirer une branche », et ça marche aussi dans un worktree, où la branche par défaut est souvent déjà extraite ailleurs.
 
-Pour une issue, la démarrer ensuite dans le Project : elle passe en `In Progress` et en « Maintenant », et son epic, s'il y en a une, en « Maintenant ». Une sous-issue va d'elle-même dans le Project de son epic ; une issue sans epic dans celui de la session — pour une issue rangée dans un autre Project, `NINA_PROJECT=<n> plan.sh start …`, et sans `NINA_PROJECT`, sauter et le dire. La sortie nomme le Project visé. Un refus (epic rangée nulle part ou dans plusieurs Projects) ou un avertissement (issue rangée aussi ailleurs) se rapporte à l'utilisateur, sans corriger le Project à sa place.
+Pour une issue, la démarrer ensuite dans le Project : elle passe en `In Progress` et en « Maintenant », et son epic, s'il y en a une, en « Maintenant ». Une sous-issue va d'elle-même dans le Project de son epic, une issue déjà rangée reste dans le sien ; seule une issue sans epic rangée nulle part va dans celui de la session — sans `NINA_PROJECT`, `plan.sh` le refuse : sauter et le dire. La sortie nomme le Project visé. Un refus (plusieurs Projects, epic rangée nulle part, issue introuvable) ou un avertissement (issue rangée aussi ailleurs) se rapporte à l'utilisateur, sans corriger le Project à sa place.
 
 ```bash
 plan.sh start <url de l'issue>
