@@ -9,7 +9,7 @@
 # facultatifs, et outputs consommés. Un changement de contrat qui casserait les cinq repos
 # appelants fait échouer `validate-workflows.yml` sur la pull request.
 #
-# Son pendant, `appelant-fautif.yml`, prouve que la vérification mord : un « OK » obtenu sans
+# Son pendant, `invalid-caller.yml`, prouve que la vérification mord : un « OK » obtenu sans
 # jamais voir d'échec ne dit rien.
 
 name: Appelant valide
@@ -64,7 +64,7 @@ jobs:
       image-description: Vérifie le contrat des workflows partagés
 
   # Consomme les outputs : une disparition ou un renommage est rejeté ici.
-  consommer-les-outputs:
+  consume-outputs:
     needs: [versioning, build]
     runs-on: ubuntu-24.04
     steps:
