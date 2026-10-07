@@ -4,7 +4,9 @@ name: Docker Cleanup
 # - workflow_call (depuis deploy.yml) : nettoyage ciblé post-deploy sur une image donnée
 # - schedule / workflow_dispatch     : nettoyage profond global (toutes images + build cache)
 #
-# Secrets requis sur ce repo : SERVER_HOST, SERVER_USER, SSH_PRIVATE_KEY
+# Secrets requis : SERVER_HOST, SERVER_USER, SSH_PRIVATE_KEY — sur ce repo pour le nettoyage
+# profond, et chez l'appelant, qui les transmet nommément : déclarés ici, ils dispensent de
+# `secrets: inherit`, qui donnerait au job tous les secrets du repo appelant.
 
 on:
   schedule:
@@ -17,6 +19,13 @@ on:
         type: string
         required: false
         default: ''
+    secrets:
+      SERVER_HOST:
+        required: true
+      SERVER_USER:
+        required: true
+      SSH_PRIVATE_KEY:
+        required: true
 
 jobs:
   cleanup:

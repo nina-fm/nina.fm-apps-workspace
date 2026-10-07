@@ -73,12 +73,15 @@ jobs:
           echo "has_release=${{ needs.versioning.outputs.has_release }}"
           echo "image=${{ needs.build.outputs.image }}"
 
-  # `cleanup.yml` — son seul input, et `secrets: inherit`, que `actionlint` ne sait pas
-  # exiger : il lit `SERVER_HOST`, `SERVER_USER` et `SSH_PRIVATE_KEY` sans les déclarer, donc
-  # seul `inherit` les lui transmet. Les quatre appelants réels le passent tous.
+  # `cleanup.yml` — son seul input, et ses trois secrets, requis et passés nommément :
+  # `actionlint` refuse un appel qui en omet un, ce qu'il ne peut pas vérifier sur
+  # `secrets: inherit` (#71).
   post-deploy:
     needs: build
     uses: ./.github/workflows/cleanup.yml
     with:
       image-name: ghcr.io/${{ github.repository }}
-    secrets: inherit
+    secrets:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}

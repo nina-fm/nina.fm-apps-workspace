@@ -61,3 +61,11 @@ jobs:
     uses: ./.github/workflows/node-validate.yml
     secrets:
       CODECOV_TOKENN: ${{ secrets.CODECOV_TOKEN }}
+
+  # Faute 6 — secret requis omis : `cleanup.yml` exige ses trois secrets SSH (#71), et
+  # `SSH_PRIVATE_KEY` manque. Sans elle, rien ne prouverait que `required: true` est contrôlé.
+  missing-required-secret:
+    uses: ./.github/workflows/cleanup.yml
+    secrets:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
