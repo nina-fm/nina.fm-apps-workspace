@@ -1,7 +1,7 @@
 # Appelant fautif — n'est jamais exécuté, et doit **échouer** à la vérification.
 #
 # Son rôle est de prouver que le contrôle mord : `actionlint` qui ne dit rien sur
-# `appelant-valide.yml` ne prouve rien tant qu'on ne l'a pas vu rejeter quelque chose. Si ce
+# `valid-caller.yml` ne prouve rien tant qu'on ne l'a pas vu rejeter quelque chose. Si ce
 # fichier passe, c'est le contrôle lui-même qui est cassé — et c'est ce que
 # `validate-workflows.yml` vérifie, en exigeant un code de sortie non nul.
 #
@@ -20,7 +20,7 @@ on: workflow_dispatch
 
 jobs:
   # Faute 1 — input requis omis : `version`, `image-description`.
-  input-requis-omis:
+  missing-required-input:
     permissions:
       contents: write
       packages: write
@@ -29,7 +29,7 @@ jobs:
       image-title: Il manque version et image-description
 
   # Faute 2 — input inconnu : `image-titel` au lieu de `image-title`.
-  input-inconnu:
+  unknown-input:
     permissions:
       contents: write
       packages: write
@@ -40,15 +40,15 @@ jobs:
       image-description: Coquille volontaire
 
   # Faute 3 — output inexistant : `image-version` a été retiré du contrat (#57).
-  output-inexistant:
-    needs: input-inconnu
+  unknown-output:
+    needs: unknown-input
     runs-on: ubuntu-24.04
     steps:
-      - run: echo "${{ needs.input-inconnu.outputs.image-version }}"
+      - run: echo "${{ needs.unknown-input.outputs.image-version }}"
 
   # Faute 4 — input inconnu sur un autre workflow partagé que `build-release.yml`, pour que
   # le contrôle couvre aussi `release.yml` : `sauter-la-ci` n'existe pas.
-  input-inconnu-release:
+  unknown-input-release:
     permissions:
       contents: write
     uses: ./.github/workflows/release.yml
@@ -57,7 +57,16 @@ jobs:
 
   # Faute 5 — secret inconnu : `node-validate.yml` déclare quatre secrets, et un renommage
   # casserait `nina.fm-api`, qui les transmet nommément. `actionlint` sait les contrôler.
-  secret-inconnu:
+  unknown-secret:
     uses: ./.github/workflows/node-validate.yml
     secrets:
       CODECOV_TOKENN: ${{ secrets.CODECOV_TOKEN }}
+
+  # Faute 6 — secret requis omis : `cleanup.yml` exige ses trois secrets SSH (#71), et
+  # `SSH_PRIVATE_KEY` manque. Sans cette faute, rien ne prouverait que `required: true` est
+  # contrôlé.
+  missing-required-secret:
+    uses: ./.github/workflows/cleanup.yml
+    secrets:
+      SERVER_HOST: ${{ secrets.SERVER_HOST }}
+      SERVER_USER: ${{ secrets.SERVER_USER }}
