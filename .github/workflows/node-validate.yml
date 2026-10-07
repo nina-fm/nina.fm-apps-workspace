@@ -46,6 +46,12 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       HUSKY: '0'
+      # Les envois ne peuvent pas se fier à la seule branche : un `workflow_dispatch` du
+      # `ci.yml` d'une app, lancé sur `main`, appelle ce workflow sans secrets, et le `curl`
+      # vers une URL vide faisait échouer le job (#36). Un `if:` de step ne lit pas
+      # `secrets` : leur présence passe par `env`, en chaîne `'true'` / `'false'`.
+      HAS_CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN != '' }}
+      HAS_GRAFANA_SECRETS: ${{ secrets.GRAFANA_METRICS_URL != '' && secrets.GRAFANA_METRICS_USER != '' && secrets.GRAFANA_METRICS_TOKEN != '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -78,7 +84,7 @@ jobs:
         run: pnpm test:coverage
 
       - name: Upload coverage to Codecov
-        if: inputs.codecov-enabled && github.ref == format('refs/heads/{0}', inputs.upload-on-branch)
+        if: inputs.codecov-enabled && github.ref == format('refs/heads/{0}', inputs.upload-on-branch) && env.HAS_CODECOV_TOKEN == 'true'
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -86,7 +92,7 @@ jobs:
           fail_ci_if_error: false
 
       - name: Push coverage trend to Grafana
-        if: inputs.grafana-metrics-enabled && github.ref == format('refs/heads/{0}', inputs.upload-on-branch)
+        if: inputs.grafana-metrics-enabled && github.ref == format('refs/heads/{0}', inputs.upload-on-branch) && env.HAS_GRAFANA_SECRETS == 'true'
         env:
           GRAFANA_METRICS_URL: ${{ secrets.GRAFANA_METRICS_URL }}
           GRAFANA_METRICS_USER: ${{ secrets.GRAFANA_METRICS_USER }}
