@@ -81,7 +81,10 @@ show() {
 
 # Une ligne par issue ouverte de Maintenant, Ensuite et Plus tard, de quoi trier sans
 # ouvrir les corps : dernière mise à jour, epic et avancement de ses sous-issues,
-# parent, en cours. item-list n'expose ni la date ni le parent, d'où GraphQL
+# parent, en cours. item-list n'expose ni la date ni le parent, d'où GraphQL.
+# Ne vaut pas comme preuve d'absence : le filtre ci-dessous écarte les issues fermées
+# et celles sans Horizon, ce qui a fait conclure à tort que des items mal rangés
+# avaient disparu des Projects (#68). Pour un constat, `gh project item-list`
 list() {
   gh api graphql --paginate --slurp -F n="$PROJECT" -f owner="$OWNER" -f query='
     query($owner: String!, $n: Int!, $endCursor: String) { organization(login: $owner) { projectV2(number: $n) {
