@@ -55,9 +55,9 @@ l'affiche en début de session quand le repo a le sien (`NINA_PROJECT` dans son
   le 2026-09-22, une sous-issue de l'epic apps-workspace#46 était « Maintenant » dans le
   Project du workspace et « Au fil de l'eau » dans celui de faceb.
 - **Toute issue ouverte se range dans un Project**, `plan.sh add <url> <Horizon>` : celui de
-  son repo, ou celui de l'epic dont elle est une sous-issue. Depuis un autre repo que le sien,
-  préfixer `NINA_PROJECT=<n>` — `start` et `move` compris, qui sinon ajoutent au Project de la
-  session l'epic et ses autres sous-issues (#68).
+  l'epic dont elle est une sous-issue, sinon celui de son repo. `plan.sh` trouve seul celui
+  d'une sous-issue ou d'une issue déjà rangée, quelle que soit la session ; le premier rangement
+  d'une issue sans epic depuis un autre repo se préfixe `NINA_PROJECT=<n>`.
 - **Horizon** (`Maintenant`, `Ensuite`, `Plus tard`, `Différé`, `Au fil de l'eau`) dit la
   priorité ; « Maintenant » est un engagement court : l'epic en cours, ou 2 ou 3 issues.
   Il bouge par `/nina:plan`, au signal du plan affiché ou à la fermeture d'une epic.

@@ -17,6 +17,9 @@ mkdir -p "$work/bin" "$work/repo" "$work/api"
 # de la réponse, une par élément : --slurp les rend telles quelles, --paginate les
 # concatène, sinon la première seule — et --jq avec --slurp est refusé, comme le vrai gh.
 # Sans fichier, un 404 dont le corps part sur la sortie standard, comme le vrai gh.
+# gh api graphql -f owner= -f repo= -F n= sert $GH_API/resource_<owner>_<repo>_issues_<n> ;
+# sans fichier, une issue sans epic ni Project. Le numéro 99999 n'est pas une issue :
+# comme le vrai gh, le corps JSON sur la sortie standard, le message en code 1.
 # L'item d'une issue est ITEM_<repo>_<numéro>, pour voir lesquels sont modifiés.
 cat >"$work/bin/gh" <<'EOF'
 #!/usr/bin/env bash
@@ -33,6 +36,17 @@ case "$1 $2 $3" in
     url=$(sed 's/.*--url \([^ ]*\).*/\1/' <<<"$*")
     repo=${url%/issues/*}
     out="{\"id\":\"ITEM_${repo##*/}_${url##*/}\"}"
+    ;;
+  "api graphql -f")
+    owner=$(sed -n 's/.*-f owner=\([^ ]*\).*/\1/p' <<<"$*")
+    repo=$(sed -n 's/.*-f repo=\([^ ]*\).*/\1/p' <<<"$*")
+    n=$(sed -n 's/.*-F n=\([^ ]*\).*/\1/p' <<<"$*")
+    file="$GH_API/resource_${owner}_${repo}_issues_$n"
+    if [ "$n" = 99999 ]; then
+      echo '{"data":{"repository":{"issue":null}},"errors":[{"type":"NOT_FOUND"}]}'
+      echo "gh: Could not resolve to an Issue with the number of $n." >&2; exit 1
+    elif [ -f "$file" ]; then out=$(jq -c '.[0]' "$file")
+    else out='{"data":{"repository":{"issue":{"projectItems":{"nodes":[]},"parent":null}}}}'; fi
     ;;
   "api "*)
     file="$GH_API/$(tr / _ <<<"$2")"
@@ -78,7 +92,18 @@ cat >"$work/api/repos_nina-fm_nina.fm-mixtaper_issues_46_sub_issues" <<EOF
 [[{"html_url":"$MIX/38","state":"open"},{"html_url":"$MIX/37","state":"closed"}],
  [{"html_url":"$API/56","state":"open"}]]
 EOF
-echo "[{\"html_url\":\"$MIX/46\"}]" >"$work/api/repos_nina-fm_nina.fm-mixtaper_issues_38_parent"
+
+# resource <issue> <epic ou ""> <Projects de l'epic> [Projects de l'issue] : ce que la
+# requête de resolve_project rend. Numéros séparés par des espaces, suffixés de « a »
+# pour un item archivé, de « f » pour un Project fermé, de « x » pour un autre owner
+resource() {
+  local nodes='def nodes: [splits(" ") | select(. != "") | {isArchived: test("a"),
+    project: {number: (sub("[afx]+$"; "") | tonumber), closed: test("f"), owner: {login: (if test("x") then "autre" else "nina-fm" end)}}}];'
+  jq -nc --arg epic "$2" --arg ep "$3" --arg ip "${4:-}" "$nodes"'
+    [{data: {repository: {issue: {projectItems: {nodes: ($ip | nodes)},
+      parent: (if $epic == "" then null else {url: $epic, projectItems: {nodes: ($ep | nodes)}} end)}}}}]' \
+    >"$work/api/resource_$(tr / _ <<<"${1#https://github.com/}")"
+}
 
 # items <ligne>… : un item-list fait de ces items, rangés en Maintenant et ouverts
 items() {
@@ -194,7 +219,8 @@ grep -q -- "--paginate --slurp -F n=1" "$GH_CALLS" || fail "list : le Project de
 unset NINA_PROJECT
 for cmd in "add $MIX/70 Maintenant" "start $MIX/70" "move $MIX/70 Ensuite"; do
   run $cmd
-  [[ $code -eq 2 && "$err" == *NINA_PROJECT* && ! -s "$GH_CALLS" ]] || fail "${cmd%% *} sans NINA_PROJECT : attendu un refus qui nomme NINA_PROJECT, obtenu code $code, erreur « $err »"
+  grep -q "^project" "$GH_CALLS" && fail "${cmd%% *} sans NINA_PROJECT : aucun Project ne doit être touché"
+  [[ $code -eq 2 && "$err" == *NINA_PROJECT* ]] || fail "${cmd%% *} sans NINA_PROJECT : attendu un refus qui nomme NINA_PROJECT, obtenu code $code, erreur « $err »"
 done
 
 export NINA_PROJECT=2
@@ -239,12 +265,76 @@ run start "$MIX/70"
 grep -q -- "--id ITEM_nina.fm-mixtaper_70 --field-id F_status --single-select-option-id O_progress" "$GH_CALLS" || fail "start : Status In Progress non posé"
 grep -q -- "--id ITEM_nina.fm-mixtaper_70 --field-id F_horizon --single-select-option-id O_now" "$GH_CALLS" || fail "start : Horizon Maintenant non posé"
 
+run start "$MIX/99999"
+[[ $code -eq 1 && "$err" == *"Could not resolve to an Issue"* ]] || fail "pas une issue (PR ou introuvable) : attendu l'erreur de gh, obtenu code $code, erreur « $err »"
+grep -q -- "^project" "$GH_CALLS" && fail "pas une issue : aucun Project ne doit être touché"
+grep -q -- "-f owner=nina-fm -f repo=nina.fm-mixtaper -F n=99999" "$GH_CALLS" || fail "requête : l'issue n'est pas lue par owner, repo et numéro"
+
+# --- Issue sans epic déjà rangée : son Project, pas celui de la session (#68)
+
+resource "$MIX/46" "" "" "1"
+run move "$MIX/46" Ensuite
+[[ $code -eq 0 && "$out" == "$MIX/46 → Ensuite (Project 1 Mixtaper)"* ]] || fail "move epic rangée ailleurs : attendu son Project 1, obtenu code $code, sortie « $out », erreur « $err »"
+grep -q -- "item-add 2" "$GH_CALLS" && fail "move epic rangée ailleurs : ni l'epic ni ses sous-issues n'entrent dans le Project 2 de la session"
+grep -q -- "project item-add 1 --owner nina-fm --url $API/56" "$GH_CALLS" || fail "move epic rangée ailleurs : la sous-issue api#56 ne suit pas dans le Project 1"
+grep -q -- "isArchived project { number closed" "$GH_CALLS" || fail "requête : l'archivage des items et la fermeture des Projects ne sont pas lus"
+
+resource "$MIX/46" "" "" "1 3"
+run move "$MIX/46" Ensuite
+[[ $code -eq 1 && "$err" == "$MIX/46 rangée dans plusieurs Projects (1 3)"* ]] || fail "issue dans deux Projects : attendu un refus qui les nomme, obtenu code $code, erreur « $err »"
+
+resource "$MIX/46" "" "" "1 2a 3f 4x"
+run move "$MIX/46" Ensuite
+[[ $code -eq 0 && "$out" == "$MIX/46 → Ensuite (Project 1 Mixtaper)"* ]] || fail "issue rangée en 1, archivée en 2, en Project fermé 3 et chez un autre owner : attendu le Project 1, obtenu code $code, sortie « $out », erreur « $err »"
+rm "$work/api/resource_nina-fm_nina.fm-mixtaper_issues_46"
+
+# --- Sous-issue : le Project de son epic, quel que soit celui de la session (#68)
+
+resource "$MIX/38" "$MIX/46" 1
 run start "$MIX/38"
-[[ $code -eq 0 && "$out" == *"$MIX/46 → Maintenant"* ]] || fail "start sous-issue : attendu l'epic nommée, obtenu code $code, sortie « $out », erreur « $err »"
-for item in nina.fm-mixtaper_46 nina.fm-api_56; do
-  grep -q -- "--id ITEM_$item --field-id F_horizon --single-select-option-id O_now" "$GH_CALLS" || fail "start sous-issue : ITEM_$item non passé en Maintenant"
+[[ $code -eq 0 && "$out" == "$MIX/38 → In Progress, Maintenant (Project 1 Mixtaper)"* && "$out" == *"$MIX/46 → Maintenant (Project 1 Mixtaper)"* ]] \
+  || fail "start sous-issue : attendu l'issue et son epic dans le Project 1 de l'epic, obtenu code $code, sortie « $out », erreur « $err »"
+for url in "$MIX/38" "$MIX/46" "$API/56"; do
+  grep -q -- "project item-add 1 --owner nina-fm --url $url" "$GH_CALLS" || fail "start sous-issue : $url non rangée dans le Project 1 de l'epic"
 done
+grep -q -- "item-add 2" "$GH_CALLS" && fail "start sous-issue : rien ne doit entrer dans le Project 2 de la session"
+grep -q -- "--project-id PVT_1 --id ITEM_nina.fm-api_56 --field-id F_horizon --single-select-option-id O_now" "$GH_CALLS" || fail "start sous-issue : la sœur api#56 non passée en Maintenant"
 grep -q -- "--id ITEM_nina.fm-mixtaper_46 --field-id F_status" "$GH_CALLS" && fail "start sous-issue : le Status de l'epic ne doit pas bouger"
+[[ -z "$err" ]] || fail "start sous-issue bien rangée : attendu aucun avertissement, obtenu « $err »"
+
+run add "$MIX/38" Ensuite
+[[ $code -eq 0 && "$out" == "$MIX/38 → Ensuite (Project 1 Mixtaper)" ]] || fail "add sous-issue : attendu le Project 1 de l'epic, obtenu code $code, sortie « $out », erreur « $err »"
+
+unset NINA_PROJECT
+run move "$MIX/38" Ensuite
+[[ $code -eq 0 && "$out" == "$MIX/38 → Ensuite (Project 1 Mixtaper)" ]] || fail "move sous-issue sans NINA_PROJECT : attendu le Project 1 de l'epic, obtenu code $code, sortie « $out », erreur « $err »"
+export NINA_PROJECT=2
+
+resource "$MIX/38" "$MIX/46" 1 "1 2 4"
+run start "$MIX/38"
+[[ $code -eq 0 && "$err" == "$MIX/38 aussi rangée hors du Project de son epic, à en retirer : 2 4" ]] \
+  || fail "start sous-issue mal rangée : attendu un avertissement qui nomme les Projects 2 et 4, obtenu code $code, erreur « $err »"
+grep -q -- "item-delete" "$GH_CALLS" && fail "start sous-issue mal rangée : rien ne se retire tout seul"
+
+resource "$MIX/38" "$MIX/46" "2a 1" "1 2a"
+run start "$MIX/38"
+[[ $code -eq 0 && "$out" == "$MIX/38 → In Progress, Maintenant (Project 1 Mixtaper)"* && -z "$err" ]] \
+  || fail "epic archivée en 2, active en 1 : attendu le Project 1 sans avertissement, obtenu code $code, sortie « $out », erreur « $err »"
+
+resource "$MIX/38" "$MIX/46" "1a"
+run start "$MIX/38"
+[[ $code -eq 0 && "$out" == "$MIX/38 → In Progress, Maintenant (Project 1 Mixtaper)"* ]] \
+  || fail "epic fermée, archivée dans le seul Project 1 : attendu le Project 1, obtenu code $code, sortie « $out », erreur « $err »"
+
+resource "$MIX/38" "$MIX/46" ""
+run start "$MIX/38"
+[[ $code -eq 1 && "$err" == "epic $MIX/46 rangée dans aucun Project"* ]] || fail "epic sans Project : attendu un refus qui nomme l'epic, obtenu code $code, erreur « $err »"
+grep -q -- "^project" "$GH_CALLS" && fail "epic sans Project : aucun Project ne doit être touché"
+
+resource "$MIX/38" "$MIX/46" "1 3"
+run start "$MIX/38"
+[[ $code -eq 1 && "$err" == "epic $MIX/46 rangée dans plusieurs Projects (1 3)"* ]] || fail "epic dans deux Projects : attendu un refus qui les nomme, obtenu code $code, erreur « $err »"
+grep -q -- "^project" "$GH_CALLS" && fail "epic dans deux Projects : aucun Project ne doit être touché"
 
 if [[ $failures -gt 0 ]]; then
   echo "$failures cas en échec"
