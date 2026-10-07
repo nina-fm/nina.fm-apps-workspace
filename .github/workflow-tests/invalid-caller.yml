@@ -63,7 +63,8 @@ jobs:
       CODECOV_TOKENN: ${{ secrets.CODECOV_TOKEN }}
 
   # Faute 6 — secret requis omis : `cleanup.yml` exige ses trois secrets SSH (#71), et
-  # `SSH_PRIVATE_KEY` manque. Sans elle, rien ne prouverait que `required: true` est contrôlé.
+  # `SSH_PRIVATE_KEY` manque. Sans cette faute, rien ne prouverait que `required: true` est
+  # contrôlé.
   missing-required-secret:
     uses: ./.github/workflows/cleanup.yml
     secrets:
