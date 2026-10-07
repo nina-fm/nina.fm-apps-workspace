@@ -42,10 +42,22 @@ Le plan d'un repo vit dans son Project GitHub, pas dans ses fichiers. Le plugin 
 l'affiche en début de session quand le repo a le sien (`NINA_PROJECT` dans son
 `.claude/settings.json`).
 
+- **Un Project, un périmètre.** Celui d'un repo porte son métier et ce qui lui est
+  intrinsèque ; celui du workspace porte les chantiers qui traversent les cinq repos. `api` et
+  `auth` n'ont pas de Project : leurs issues se rangent dans celui du repo pour le compte
+  duquel elles sont ouvertes.
 - **Une issue, une session.** Les epics (label `epic`) se découpent avec `/nina:epic` au
   moment d'y venir ; leurs sous-issues, dans l'ordre, prennent l'Horizon de l'epic.
-- **Toute issue ouverte se range dans le Project**, `plan.sh add <url> <Horizon>` — y
-  compris celle ouverte sur un autre repo pour le compte de celui-ci.
+- **Un chantier transverse est une epic du workspace** ; un chantier à deux repos que pilote
+  une app reste son epic à elle (mixtaper#46 porte des sous-issues `api`). Les sous-issues
+  vivent dans le repo du code qu'elles modifient et se rangent dans le **seul** Project de leur
+  epic : un second rangement, ce sont deux Horizons qui divergent sans que rien ne le signale —
+  le 2026-09-22, une sous-issue de l'epic apps-workspace#46 était « Maintenant » dans le
+  Project du workspace et « Au fil de l'eau » dans celui de faceb.
+- **Toute issue ouverte se range dans un Project**, `plan.sh add <url> <Horizon>` : celui de
+  son repo, ou celui de l'epic dont elle est une sous-issue. Depuis un autre repo que le sien,
+  préfixer `NINA_PROJECT=<n>` — `start` et `move` compris, qui sinon ajoutent au Project de la
+  session l'epic et ses autres sous-issues (#68).
 - **Horizon** (`Maintenant`, `Ensuite`, `Plus tard`, `Différé`, `Au fil de l'eau`) dit la
   priorité ; « Maintenant » est un engagement court : l'epic en cours, ou 2 ou 3 issues.
   Il bouge par `/nina:plan`, au signal du plan affiché ou à la fermeture d'une epic.

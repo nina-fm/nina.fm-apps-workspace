@@ -146,6 +146,8 @@ La branche part de `origin/$DEFAULT` fraîchement récupérée : c'est le « syn
 
 Pour une issue, la démarrer ensuite dans le Project : elle passe en `In Progress` et en « Maintenant », et son epic, s'il y en a une, en « Maintenant ». La sortie nomme le Project visé ; pour une issue rangée dans un autre Project que celui de la session, `NINA_PROJECT=<n> plan.sh start …`. Sans `NINA_PROJECT`, sauter et le dire.
 
+La sous-issue d'une epic d'un autre repo se démarre **toujours** avec le `NINA_PROJECT` de l'epic : `start` entraîne `move` sur l'epic, qui ajoute au Project de la session l'epic et ses autres sous-issues, celles des autres repos comprises (#68). Lancé depuis le repo de la sous-issue, il crée le second rangement que la section Plan de `CLAUDE.md` interdit.
+
 ```bash
 plan.sh start <url de l'issue>
 ```
