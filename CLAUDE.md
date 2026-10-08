@@ -126,5 +126,8 @@ Avant de l'écrire :
 3. Sinon seulement, `.claude/rules/lessons.md` du repo, ou du workspace si elle vaut pour
    les cinq. Une convention va dans `CLAUDE.md` ; `~/.claude/` ne reçoit que du personnel.
 
+Un agent ne se crée que si une commande l'appelle, à l'étape où il sert : sa description
+se relit à chaque requête, et un agent que rien n'appelle ne sert jamais.
+
 Ce qui se charge sans condition se paye à chaque requête des cinq repos. `/nina:harnais`
 le mesure contre le budget d'instructions et fait le tri : à lancer quand il le dépasse.

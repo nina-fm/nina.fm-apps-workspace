@@ -1,15 +1,24 @@
 ---
 description: Relire le diff de la branche ou d'une PR, et publier la review sur la PR si un numéro est donné
 argument-hint: "[numéro de PR]"
+context: fork
+agent: general-purpose
+model: opus
+background: false
 ---
 
-Faire une review approfondie des changements.
+<!-- Lancée dans un sous-agent isolé : il ne voit pas la conversation, ce qui retire le
+biais de qui a écrit le code, et le diff (jusqu'à 84 k caractères) n'entre pas dans la
+session principale, qui ne reçoit que la review. Opus épinglé : la pertinence de la
+relecture est toute sa valeur, quand le défaut des sous-agents est Sonnet. -->
+
+Faire une review approfondie des changements. Tu n'as pas le contexte de la session qui t'a lancé : tout ce que tu sais vient du diff, de la PR et du repo.
 
 $ARGUMENTS
 
 Si `$ARGUMENTS` contient un numéro de PR (ex. `42`), relire le diff de cette PR et publier la review en commentaire à la fin. Sinon, relire le diff local de la branche courante, sans rien publier.
 
-**Auto-review** — la PR est la nôtre quand `gh pr view N --json author --jq .author.login` vaut `gh api user --jq .login` : ne rien publier, présenter la review dans le terminal, puis corriger soi-même sur la branche les problèmes relevés. Une review postée sur sa propre PR a dû être supprimée (mixtaper#84).
+**Auto-review** — la PR est la nôtre quand `gh pr view N --json author --jq .author.login` vaut `gh api user --jq .login` : ne rien publier (une review postée sur sa propre PR a dû être supprimée, mixtaper#84). Rendre la review, que la session principale applique sur la branche. Ne modifier aucun fichier toi-même.
 
 La review est rédigée en français.
 
@@ -32,7 +41,7 @@ Avec un numéro de PR, lire aussi sa description, qui porte le contexte et la re
 gh pr view N --json title,body,url --jq '"\(.title)\n\(.url)\n\n\(.body)"'
 ```
 
-Lire aussi le `CLAUDE.md` du repo (et ses parents) : ses conventions font partie des critères.
+Les `CLAUDE.md` du repo et de ses parents sont déjà chargés : leurs conventions font partie des critères, inutile de les relire.
 
 ---
 
@@ -120,7 +129,7 @@ _Sans problème : « Aucun problème relevé. »_
 
 ### Étape 5 — Publier sur la PR (si un numéro est donné, hors auto-review)
 
-En auto-review, sauter cette étape : corriger les problèmes du tableau sur la branche.
+En auto-review, sauter cette étape : rendre la review telle quelle, suivie de « Auto-review : à corriger sur la branche par la session principale ».
 
 Écrire la review dans un fichier par heredoc à guillemets simples, puis la publier — un corps passé en argument se casse sur les apostrophes et les backticks :
 

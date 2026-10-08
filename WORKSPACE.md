@@ -242,6 +242,7 @@ claude --plugin-dir plugins/nina                                  # charge le pl
 bash plugins/nina/hooks/guard-env.test.sh                         # test de la garde .env
 bash plugins/nina/bin/plan.test.sh                                # test de plan.sh (gh simulé)
 bash plugins/nina/bin/harnais.test.sh                             # test de harnais.sh (HOME simulé)
+bash plugins/nina/bin/harnais-conso.test.sh                       # test de harnais-conso.sh (transcripts de fixture)
 claude plugin validate . && claude plugin validate plugins/nina   # structure
 ```
 
@@ -269,7 +270,7 @@ Les cinq repos de code sont clonés **dans** le workspace par `setup.sh`, et ign
 │       ├── .claude-plugin/plugin.json
 │       ├── LESSONS.md                 ← Pièges du chantier du plugin
 │       ├── agents/                    ← api-explorer (nina:api-explorer)
-│       ├── bin/                       ← plan.sh, review-diff.sh, harnais.sh et leurs tests (dans le PATH des sessions)
+│       ├── bin/                       ← plan.sh, review-diff.sh, harnais.sh, harnais-conso.sh et leurs tests (dans le PATH des sessions)
 │       ├── commands/                  ← /nina:epic, /nina:task, /nina:pr, /nina:review, /nina:plan, /nina:harnais
 │       └── hooks/                     ← hooks.json, garde .env et son test
 └── .claude/
@@ -379,8 +380,8 @@ Servies par le plugin nina dans tout repo qui l'active :
 | `/nina:epic #N` ou `"description"` | Explore et découpe une grande fonctionnalité ; une fois le découpage approuvé, crée les sous-issues, leurs dépendances, et les range dans le Project de l'epic, à son Horizon.                                                 |
 | `/nina:pr`                         | Vérifications déduites de `package.json`, changeset si le repo utilise Changesets, push avec upstream, `gh pr create`. Signale l'epic dont la PR ferme la dernière sous-issue ouverte.                          |
 | `/nina:plan`                       | Revue du plan, au signal de `plan.sh` ou à la fermeture d'une epic : propose de monter, garder, descendre ou fermer chaque issue de Maintenant, Ensuite et Plus tard, puis applique ce qui est tranché.       |
-| `/nina:harnais`                    | Mesure ce que le harnais charge à chaque session contre son budget (`harnais.sh`), classe chaque leçon (garder, condenser, scoper par `paths:`, déplacer, supprimer avec preuve), fait trancher, applique et remesure. |
-| `/nina:review [N]`                 | Review du diff (PR `N` ou branche courante) avec la checklist commune et `.claude/checklists/review.md` ; avec `N`, publiée par `gh pr comment`.                                                              |
+| `/nina:harnais`                    | Mesure ce que le harnais charge (`harnais.sh`) et ce que les sessions consomment (`harnais-conso.sh`, lu dans les transcripts), classe leçons, agents et étapes de commande (garder, condenser, scoper par `paths:`, agent → règle ou commande, déléguer à un sous-agent, supprimer avec preuve), fait trancher, applique et remesure. |
+| `/nina:review [N]`                 | Review du diff (PR `N` ou branche courante) avec la checklist commune et `.claude/checklists/review.md` ; avec `N`, publiée par `gh pr comment`. Tourne dans un sous-agent isolé en Opus (`context: fork`) : sans le biais de la session, et sans faire entrer le diff dans son contexte. |
 
 Commandes locales, dans le `.claude/commands/` de leur repo :
 
