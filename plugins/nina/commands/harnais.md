@@ -51,7 +51,7 @@ Lire chaque fichier du périmètre avec l'outil Read (rtk filtre `cat`), et donn
 Limites d'une règle à `paths:` :
 
 - elle se charge quand Read, Write ou Edit touche un fichier qui correspond, pas sur `gh`, `cat` ni sur un fichier lu par Bash. Une leçon se scope si elle sert **en lisant ou en écrivant** ces fichiers ; celle qui sert au merge, en review (`review-diff.sh` passe par Bash), sur une réponse d'API ou des logs CI reste chargée sans condition, ou passe dans la commande où elle sert ;
-- un glob d'une règle du workspace matche aussi depuis un sous-repo (`.github/**` se déclenche sur `nina.fm-website/.github/workflows/ci.yml`, #79) ;
+- un glob d'une règle du workspace ne matche pas toujours depuis un sous-repo : `.github/**` se déclenche sur `nina.fm-website/.github/workflows/ci.yml` (#79), `.claude/agents/**` pas sur `nina.fm-api/.claude/agents/` (#81). Préfixer `**/` ce qui vit dans les repos, et constater le chargement depuis un sous-repo (étape 5) ;
 - seul `paths` est lu dans un frontmatter : un `description:` ne sert à rien et se retire ;
 - dans un glob, `[` ouvre une classe de caractères : `\[uid\]` pour une route dynamique.
 

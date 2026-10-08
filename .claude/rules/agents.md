@@ -1,6 +1,6 @@
 ---
 paths:
-  - ".claude/agents/**"
+  - "**/.claude/agents/**"
   - "plugins/nina/agents/**"
 ---
 

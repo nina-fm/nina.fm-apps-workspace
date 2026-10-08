@@ -30,8 +30,9 @@ une session ; une epic se découpe avec `/nina:epic`, Horizon et Status se manie
 
 **Toute issue ouverte se range**, `plan.sh add <url> <Horizon>` : dans le **seul** Project de
 son epic si c'en est une sous-issue (un second rangement, ce sont deux Horizons qui divergent
-en silence), sinon dans celui de son repo ; le premier rangement d'une issue sans epic depuis
-un autre repo se préfixe `NINA_PROJECT=<n>`.
+en silence), sinon dans celui de son repo. `plan.sh` trouve seul le Project d'une sous-issue
+ou d'une issue déjà rangée ; seul le premier rangement d'une issue sans epic depuis un autre
+repo se préfixe `NINA_PROJECT=<n>`.
 
 ## Recette
 
