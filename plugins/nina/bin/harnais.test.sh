@@ -82,6 +82,22 @@ bash "$script" "$work/absent" >"$work/out" 2>&1
 code=$?
 [ "$code" = 2 ] || fail "code $code sur un dossier absent, attendu 2"
 
+# --alerte, pour le hook SessionStart : muet dans le budget, une ligne au-delà,
+# toujours 0, et muet sur un dossier absent
+HARNAIS_BUDGET=100000 bash "$script" --alerte "$ws/repo" >"$work/out" 2>&1
+code=$?
+[ -s "$work/out" ] && fail "--alerte dans le budget : sortie inattendue : $(cat "$work/out")"
+[ "$code" = 0 ] || fail "--alerte dans le budget : code $code, attendu 0"
+HARNAIS_BUDGET=10 bash "$script" --alerte "$ws/repo" >"$work/out" 2>&1
+code=$?
+expect "--alerte au-delà du budget" '^Harnais : [0-9]+ caractères .* budget 10 — lancer /nina:harnais$'
+[ "$(wc -l <"$work/out" | tr -d ' ')" = 1 ] || fail "--alerte : une seule ligne attendue"
+[ "$code" = 0 ] || fail "--alerte au-delà du budget : code $code, attendu 0"
+bash "$script" --alerte "$work/absent" >"$work/out" 2>&1
+code=$?
+[ -s "$work/out" ] && fail "--alerte sur un dossier absent : sortie inattendue"
+[ "$code" = 0 ] || fail "--alerte sur un dossier absent : code $code, attendu 0"
+
 if [ "$failures" -gt 0 ]; then
   echo "$failures échec(s)"
   exit 1

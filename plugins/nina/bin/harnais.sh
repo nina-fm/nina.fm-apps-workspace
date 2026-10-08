@@ -27,10 +27,22 @@
 #
 # Code de sortie : 0 dans le budget, 1 au-delà (HARNAIS_BUDGET, en caractères),
 # 2 si le dossier n'existe pas.
+#
+#   harnais.sh --alerte [dossier]
+#
+# Pour le hook SessionStart du plugin : muet dans le budget — rien n'entre alors
+# dans le contexte —, une ligne au-delà, et toujours 0, pour ne jamais gêner le
+# démarrage d'une session.
 set -euo pipefail
 export LC_ALL=en_US.UTF-8
 
 BUDGET=${HARNAIS_BUDGET:-18000}
+if [ "${1:-}" = "--alerte" ]; then
+  out=$(bash "$0" "${2:-.}" 2>/dev/null) && exit 0
+  total=$(printf '%s\n' "$out" | awk '/  total, / { print $1; exit }')
+  [ -n "$total" ] && echo "Harnais : $total caractères d'instructions chargés à chaque session, budget $BUDGET — lancer /nina:harnais"
+  exit 0
+fi
 [ -d "${1:-.}" ] || { echo "harnais.sh : dossier introuvable : $1" >&2; exit 2; }
 target=$(cd "${1:-.}" && pwd -P)
 home=$(cd ~ && pwd -P)
