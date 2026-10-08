@@ -58,6 +58,30 @@ code=$?
 expect "dépassement chiffré" '^Dépassement : 29 caractères'
 [ "$code" = 1 ] || fail "code $code hors budget, attendu 1"
 
+# Frontmatter non fermé : Claude Code l'ignore et charge tout le fichier ;
+# `paths: []` ne scope rien
+printf -- '---\npaths:\n  - "z/**"\n12\n' >"$ws/.claude/rules/ouvert.md"   # 25
+printf -- '---\npaths: []\n---\n1\n' >"$ws/.claude/rules/vide.md"             # 2
+bash "$script" "$ws/repo" >"$work/out"
+expect "frontmatter non fermé compté en entier" '^ +25  ~/ws/.claude/rules/ouvert.md$'
+expect "paths vide chargé sans condition" '^ +2  ~/ws/.claude/rules/vide.md$'
+rm "$ws/.claude/rules/ouvert.md" "$ws/.claude/rules/vide.md"
+
+# Mémoire de 120 Ko : tronquée à 25 Ko, sans que le SIGPIPE du premier `head`
+# n'arrête le script ; cherchée sous la racine git depuis un sous-dossier
+git init -q "$ws/repo"
+mkdir -p "$ws/repo/src"
+awk 'BEGIN { for (i = 0; i < 200; i++) { s = ""; for (j = 0; j < 599; j++) s = s "x"; print s } }' >"$mem/MEMORY.md"
+bash "$script" "$ws/repo/src" >"$work/out"
+code=$?
+expect "mémoire tronquée à 25 Ko, depuis un sous-dossier" '^ +25600  ~/.claude/projects/.*/MEMORY.md$'
+expect "total malgré une grosse mémoire" 'total'
+[ "$code" = 1 ] || fail "code $code avec une mémoire de 120 Ko, attendu 1 (hors budget)"
+
+bash "$script" "$work/absent" >"$work/out" 2>&1
+code=$?
+[ "$code" = 2 ] || fail "code $code sur un dossier absent, attendu 2"
+
 if [ "$failures" -gt 0 ]; then
   echo "$failures échec(s)"
   exit 1

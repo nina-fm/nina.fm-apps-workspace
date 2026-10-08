@@ -81,6 +81,7 @@ Parcourir les fichiers un à un, en appliquant les sections qui les concernent :
 - [ ] Commits conventionnels, description en français
 - [ ] Changeset présent si commits `feat` ou `fix` et que le repo utilise Changesets, sans `[skip ci]` — à suggérer écrit à la main dans `.changeset/<nom>.md` (ou via `/nina:pr`), jamais `pnpm changeset`, qui est interactif
 - [ ] La PR rapporte la recette : scénario du constat et chemin nominal, mesures avant / après
+- [ ] Une PR qui touche un `deploy.yml` déploie au merge, `docker compose pull` compris : les images du compose de prod sont épinglées (auth#9 : 10 min de 502)
 - [ ] Un défaut trouvé hors périmètre est consigné dans une issue, pas seulement dans la PR
 - [ ] Un défaut antérieur à la PR mais dans les fichiers ou le module qu'elle touche se corrige dans la PR, et la review le demande comme correction, pas comme issue à ouvrir. Dans api#70, trois suggestions de ce type (parité, `process.env`, double lecture) renvoyées à des issues tenaient dans la PR. L'issue reste pour un autre repo, un autre module ou un arbitrage produit
 

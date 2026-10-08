@@ -127,4 +127,4 @@ Avant de l'écrire :
    les cinq. Une convention va dans `CLAUDE.md` ; `~/.claude/` ne reçoit que du personnel.
 
 Ce qui se charge sans condition se paye à chaque requête des cinq repos. `/nina:harnais`
-le mesure contre son budget et fait le tri : à lancer quand il le dépasse.
+le mesure contre le budget d'instructions et fait le tri : à lancer quand il le dépasse.

@@ -9,7 +9,7 @@ Ramener ce qui se charge à chaque session sous son budget, sans perdre une leç
 
 $ARGUMENTS
 
-Tout ce qui se lit est en français. Le périmètre est le repo de la session (`git rev-parse --show-toplevel`) : son `CLAUDE.md`, ses `.claude/rules/`, et la mémoire automatique de la session. Le workspace se revoit depuis le workspace ; `~/.claude/` ne se propose qu'à Vincent, sans l'appliquer d'office.
+Tout ce qui se lit est en français. Le périmètre est le repo de la session (`git rev-parse --show-toplevel`) : son `CLAUDE.md`, ses `.claude/rules/`, et sa mémoire automatique (`~/.claude/projects/<repo>/memory/`). Le workspace se revoit depuis le workspace ; le reste de `~/.claude/` (`CLAUDE.md`, `RTK.md`, `rules/`) se propose à Vincent sans être appliqué d'office.
 
 ---
 
@@ -21,7 +21,7 @@ harnais.sh "$(git rev-parse --show-toplevel)"
 
 Depuis le workspace, le lancer aussi sur chacun des cinq repos (`nina.fm-*`) : ce que le workspace charge se paye dans les cinq.
 
-Chaque ligne donne les caractères d'un fichier chargé, puis le total, estimé en tokens, contre le budget (`HARNAIS_BUDGET`, 18 000 caractères par défaut pour une session entière). Les règles à `paths:` sont listées à part : elles ne coûtent qu'à la lecture d'un fichier qui correspond. Garder la sortie : c'est le « avant » de la PR.
+Chaque ligne donne les caractères d'un fichier chargé, puis le total, estimé en tokens, contre le budget d'instructions (`HARNAIS_BUDGET`, 18 000 caractères par défaut, tous niveaux confondus). Ne sont pas comptées la sortie des hooks SessionStart (`plan.sh`, de 500 à 1 600 caractères) ni les descriptions des commandes, skills et agents. Les règles à `paths:` sont listées à part : elles ne coûtent qu'à la lecture d'un fichier qui correspond. Garder la sortie : c'est le « avant » de la PR.
 
 ---
 
@@ -39,7 +39,7 @@ Lire chaque fichier du périmètre avec l'outil Read (rtk filtre `cat`), et donn
 
 Limites d'une règle à `paths:` :
 
-- elle se charge quand Read, Write ou Edit touche un fichier qui correspond, pas sur `gh`, `cat` ni sur un fichier lu par Bash : une leçon sur des logs CI ou une réponse d'API ne se scope pas ;
+- elle se charge quand Read, Write ou Edit touche un fichier qui correspond, pas sur `gh`, `cat` ni sur un fichier lu par Bash. Une leçon se scope si elle sert **en lisant ou en écrivant** ces fichiers ; celle qui sert au merge, en review (`review-diff.sh` passe par Bash), sur une réponse d'API ou des logs CI reste chargée sans condition, ou passe dans la commande où elle sert ;
 - un glob d'une règle du workspace matche aussi depuis un sous-repo (`.github/**` se déclenche sur `nina.fm-website/.github/workflows/ci.yml`, #79) ;
 - seul `paths` est lu dans un frontmatter : un `description:` ne sert à rien et se retire ;
 - dans un glob, `[` ouvre une classe de caractères : `\[uid\]` pour une route dynamique.
@@ -64,7 +64,7 @@ Demander à Vincent de trancher, en un seul échange : il valide le tableau ou l
 
 ### Étape 4 — Appliquer
 
-Seulement ce qui est validé, sur une branche (`/nina:task` d'abord si le tri a son issue). Une règle scopée s'écrit :
+Seulement ce qui est validé. La mesure de l'étape 1 tient lieu de recette de constat ; puis `/nina:task` si le tri a son issue, et la branche. Une règle scopée s'écrit :
 
 ```markdown
 ---
@@ -87,10 +87,11 @@ Réécrire un fichier d'instructions, c'est le réécrire en entier avec Write, 
 harnais.sh "$(git rev-parse --show-toplevel)"
 ```
 
-Le total doit être celui annoncé à l'étape 3 ; chaque ligne supprimée doit avoir sa preuve dans le tableau. Pour une règle scopée nouvelle, vérifier qu'elle se charge pour de bon :
+Le total doit être celui annoncé à l'étape 3 ; chaque ligne supprimée doit avoir sa preuve dans le tableau. Pour une règle scopée nouvelle, vérifier dans le transcript qu'elle se charge pour de bon : ce que le modèle dit de son contexte ne prouve rien.
 
 ```bash
-echo "Lis <fichier qui matche> avec Read, puis cite le titre de chaque règle .claude/rules chargée depuis." | claude -p --allowedTools Read
+ID=$(echo "Lis <fichier qui matche> avec Read, et réponds OK." | claude -p --allowedTools Read --output-format json | jq -r .session_id)
+grep -c '<phrase propre à la règle>' ~/.claude/projects/"$(pwd -P | sed 's/[^A-Za-z0-9]/-/g')"/"$ID".jsonl   # au moins 1
 ```
 
 Le tableau validé, le avant et le après vont dans le corps de la PR (`/nina:pr`).

@@ -24,6 +24,7 @@ echo "Branche : $BRANCH → $BASE"
 git fetch origin "$BASE"
 git status --short
 git log "origin/$BASE..HEAD" --oneline
+git log "origin/$BASE..HEAD" --format=%B | grep -inE '\b(close|fixe?|resolve)[sd]?\b:? +[^ ]*#[0-9]+' || true   # mots-clés de fermeture dans les commits
 gh pr list --head "$BRANCH" --state open --json url --jq '.[0].url // empty'   # une PR ouverte existe déjà ?
 ```
 
@@ -128,7 +129,7 @@ La forme longue est voulue : rtk retire `-u`, et sans upstream `gh pr create` é
 - **Base** : `$BASE`
 - **Corps** : modèle ci-dessous, écrit dans un fichier par heredoc à guillemets simples (`<<'EOF'`) — un corps passé en argument se casse sur les apostrophes et les backticks
 
-Si la branche part d'une issue (numéro dans le nom de branche, ou issue de départ de la session), le corps commence par `Closes #N` : l'issue passe à Done dans le Project au merge. Pour une issue d'un autre repo : `Closes nina-fm/<repo>#N`. Une issue que la PR ne solde pas n'a de mot-clé ni dans le corps ni dans **aucun message de commit** : un `Closes #N` de commit la ferme au squash, quoi que dise le corps (#55, fermée par #58) ; `Refs #N`, et la fermer à la main.
+Si la branche part d'une issue (numéro dans le nom de branche, ou issue de départ de la session), le corps commence par `Closes #N` : l'issue passe à Done dans le Project au merge. Pour une issue d'un autre repo : `Closes nina-fm/<repo>#N`. Une issue que la PR ne solde pas n'a de mot-clé (`Closes`, `Fixes`, `Resolves`) ni dans le corps ni dans **aucun message de commit** : le squash reprend les messages des commits, et un mot-clé de commit ferme l'issue quoi que dise le corps (workspace#55, fermée par workspace#58). Ceux que l'étape 1 a relevés et qui visent une autre issue que celle de la branche se retirent avant de pousser (`git commit --amend` sur le dernier commit), ou à défaut le merge passe le corps du squash par `gh pr merge --squash --body-file` ; dans le corps, `Refs #N`, et l'issue se ferme à la main.
 
 ```bash
 BODY=$(mktemp)
