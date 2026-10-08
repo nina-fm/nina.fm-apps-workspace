@@ -94,7 +94,7 @@ Ne créer aucune branche, n'écrire aucun code et ne pas lancer `/nina:task` de 
 
 Écrire chaque corps d'issue dans un fichier par heredoc à guillemets simples (`<<'EOF'`) et le passer avec `--body-file` : un corps passé en argument se casse sur les apostrophes et les backticks.
 
-1. **Issue epic** — la réutiliser si elle existe déjà ; sinon la créer avec le label `epic`. Son corps porte l'objectif, le constat, l'approche retenue et l'ordre suggéré (section « Découpage » datée si l'epic existait). Tous les repos n'ont pas le label : le créer s'il manque, avant `gh issue create`.
+1. **Issue epic** — la réutiliser si elle existe déjà ; sinon la créer avec le label `epic`, dans le workspace pour un chantier qui traverse les repos, dans l'app pour un chantier qu'elle pilote, même s'il touche l'API (mixtaper#46 porte des sous-issues `api`). Son corps porte l'objectif, le constat, l'approche retenue et l'ordre suggéré (section « Découpage » datée si l'epic existait). Tous les repos n'ont pas le label : le créer s'il manque, avant `gh issue create`.
 
    ```bash
    gh label list -R nina-fm/<repo> --search epic --json name --jq '.[].name' | grep -qx epic \
