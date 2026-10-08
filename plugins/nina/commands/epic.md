@@ -34,9 +34,9 @@ En cas d'ambiguïté bloquante, poser la question à l'utilisateur avant de cont
 
 ### Étape 2 — Explorer le code
 
-Déléguer la lecture à un agent `Explore` (outil Agent, `subagent_type: Explore`, `model: sonnet`) : il lit dans son propre contexte, et seule sa carte revient dans la session. Un agent par repo touché ; pour un endpoint ou un format de réponse de l'API depuis une app, `nina:api-explorer`. Il ne voit pas la conversation : son brief porte la fonctionnalité telle que l'étape 1 l'a cadrée, et lui demande de chercher ce qui existe déjà en lien avec elle, ce qu'il faudrait créer et modifier, les dépendances externes et changements d'API impliqués, et les contraintes (performance, auth), puis de rendre une carte — `fichier:ligne`, rôle, pourquoi c'est pertinent —, les modèles voisins à suivre et les risques, sans recopier le code.
+Déléguer la lecture à un agent `Explore` (outil Agent, `subagent_type: Explore`, `model: sonnet`) : il lit dans son propre contexte, et seule sa carte revient dans la session. Un agent par repo touché ; pour un endpoint ou un format de réponse de l'API depuis une app, `nina:api-explorer`. Il ne voit ni la conversation ni les `CLAUDE.md` (Explore ne les charge pas) : son brief porte le chemin du repo, où y vit le code (`app/` dans faceb, `src/` dans mixtaper…), ses chemins générés (`linguist-generated` du `.gitattributes`, jamais des modèles à suivre), la fonctionnalité telle que l'étape 1 l'a cadrée, et lui demande de chercher ce qui existe déjà en lien avec elle, ce qu'il faudrait créer et modifier, les dépendances externes et changements d'API impliqués, et les contraintes (performance, auth), puis de rendre une carte — `fichier:ligne`, rôle, pourquoi c'est pertinent —, les modèles voisins à suivre et les risques, sans recopier le code.
 
-Lire ensuite soi-même, avec Read, les fichiers au cœur du découpage : les frontières des sous-issues reposent sur le code lu, pas sur un résumé. Les `CLAUDE.md` sont déjà chargés, inutile de les relire.
+Lire ensuite soi-même, avec Read, les fichiers au cœur du découpage, et le modèle voisin retenu : les frontières des sous-issues reposent sur le code lu, pas sur un résumé. Les `CLAUDE.md` sont déjà chargés, inutile de les relire.
 
 ---
 

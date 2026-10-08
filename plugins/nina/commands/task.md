@@ -49,9 +49,9 @@ Mesurer plutôt qu'observer, et garder les valeurs pour la PR. Le constat **déc
 
 ### Étape 2 — Explorer le code
 
-Déléguer la lecture à un agent `Explore` (outil Agent, `subagent_type: Explore`, `model: sonnet`) : il lit dans son propre contexte, et seule sa carte revient dans la session. Un agent par repo touché ; pour un endpoint ou un format de réponse de l'API depuis une app, `nina:api-explorer`. Il ne voit pas la conversation : son brief porte la tâche et ce que la recette de constat a établi, et lui demande de chercher les fichiers concernés (hooks, composables, services, composants, types), les implémentations voisines qui servent de modèle, et ce qui couvre déjà une partie du besoin, puis de rendre une carte — `fichier:ligne`, rôle, pourquoi c'est pertinent —, les modèles voisins à suivre et les risques, sans recopier le code.
+Déléguer la lecture à un agent `Explore` (outil Agent, `subagent_type: Explore`, `model: sonnet`) : il lit dans son propre contexte, et seule sa carte revient dans la session. Un agent par repo touché ; pour un endpoint ou un format de réponse de l'API depuis une app, `nina:api-explorer`. Il ne voit ni la conversation ni les `CLAUDE.md` (Explore ne les charge pas) : son brief porte le chemin du repo, où y vit le code (`app/` dans faceb, `src/` dans mixtaper…), ses chemins générés (`linguist-generated` du `.gitattributes`, jamais des modèles à suivre), la tâche et ce que la recette de constat a établi, et lui demande de chercher les fichiers concernés (hooks, composables, services, composants, types), les implémentations voisines qui servent de modèle, et ce qui couvre déjà une partie du besoin, puis de rendre une carte — `fichier:ligne`, rôle, pourquoi c'est pertinent —, les modèles voisins à suivre et les risques, sans recopier le code.
 
-Lire ensuite soi-même, avec Read, les seuls fichiers que le plan modifiera : le plan repose sur le code lu, pas sur un résumé. Les `CLAUDE.md` sont déjà chargés, inutile de les relire.
+Lire ensuite soi-même, avec Read, les seuls fichiers que le plan modifiera, et le modèle voisin retenu : le plan repose sur le code lu, pas sur un résumé. Les `CLAUDE.md` sont déjà chargés, inutile de les relire.
 
 ---
 

@@ -15,6 +15,7 @@ l'issue citée. `/nina:harnais` mesure et fait le tri.
 - Un remplacement qui lit une variable absente (`perl … $ENV{SEC}`) remplace par du vide en silence : `open … or die` en tête, puis relire le fichier avant publication
 - `grep -v NOM` exclut tout nom qui **contient** le motif : filtrer sur le nom exact (`find … ! -name 'README.md'`)
 - `echo "$var"` interprète les `\` : un JSON passé par `echo` à `jq` casse (`Invalid escape`) ; `printf '%s' "$var"`
+- Une apostrophe dans un programme `awk` ou `jq` entre guillemets simples le ferme, **commentaires compris** (`# l'ordre`) : le script casse en `commande introuvable` loin de la cause
 - Sous `set -e`, `VAR=$(cmd)` arrête le script si `cmd` échoue : `|| true` quand ne rien trouver est permis
 
 ## gh

@@ -45,7 +45,7 @@ Lire chaque fichier du périmètre avec l'outil Read (rtk filtre `cat`), et donn
 | **Déplacer** | Ne sert que pendant une commande, en retouchant le plugin, ou au-dessus d'un code précis | La destination : `plugins/nina/commands/<cmd>.md`, `plugins/nina/LESSONS.md`, commentaire dans le script |
 | **Agent → règle** | Agent jamais appelé qui porte du savoir de code (patterns, conventions d'un dossier) : ce savoir ne se charge jamais | Une règle `paths:` sur les fichiers qu'il vise, où ce savoir arrive au bon moment ; sa description quitte le contexte |
 | **Agent → commande** | Agent utile mais que rien n'appelle | La commande qui l'appelle, à l'étape où il sert, avec un brief autonome (il ne voit pas la conversation) |
-| **Déléguer** | Une étape de commande lit beaucoup (diff, exploration) et seule sa conclusion sert | `context: fork` pour la commande entière (comme `/nina:review`), ou un agent `Explore` à cette étape (comme `/nina:task`) ; garder Opus (`model: opus`) là où la qualité de lecture fait la valeur, sinon le défaut Sonnet des sous-agents |
+| **Déléguer** | Une étape de commande lit beaucoup (diff, exploration) et seule sa conclusion sert | `context: fork` pour la commande entière (comme `/nina:review`), ou un agent `Explore` à cette étape (comme `/nina:task`) ; préciser `model:` à chaque délégation — `opus` là où la qualité de lecture fait la valeur, `sonnet` pour une exploration : sans lui, un sous-agent prend `CLAUDE_CODE_SUBAGENT_MODEL` s'il est posé (réglage personnel), sinon le modèle de la session |
 | **Supprimer** | Un outil l'applique, elle est obsolète, ou elle double une autre source (relire un `CLAUDE.md` déjà chargé, par exemple) | Pour un outil : la règle de lint, le test ou la CI qui échoue sans elle, constaté. Pour l'obsolète : ce qui l'a rendue caduque. Pour un doublon : où vit l'original |
 
 Limites d'une règle à `paths:` :
@@ -105,6 +105,6 @@ ID=$(echo "Lis <fichier qui matche> avec Read, et réponds OK." | claude -p --al
 grep -c '<phrase propre à la règle>' ~/.claude/projects/"$(pwd -P | sed 's/[^A-Za-z0-9]/-/g')"/"$ID".jsonl   # au moins 1
 ```
 
-Pour une commande déléguée, rejouer la même commande avant et après sur le même cas, en `claude -p --plugin-dir plugins/nina --output-format json` sans droit d'écriture, et comparer les tokens de la session principale et des `subagents/*.jsonl` du transcript, ainsi que le résultat : la pertinence se vérifie autant que le gain.
+Pour une commande déléguée, rejouer la même commande avant et après sur le même cas, en `claude -p --plugin-dir plugins/nina --output-format json`, avec la lecture seule ouverte et la publication fermée (pour `/nina:review N` : `--allowedTools "Bash Read Glob Grep" --disallowedTools "Edit Write Bash(gh pr comment:*) Bash(gh pr review:*) Bash(git push:*) Bash(git commit:*) Bash(git checkout:*)"`), lire le JSON de sortie avec `printf '%s'`, pas `echo`, et comparer les tokens de la session principale et des `subagents/*.jsonl` du transcript, ainsi que le résultat : la pertinence se vérifie autant que le gain.
 
 Le tableau validé, le avant et le après vont dans le corps de la PR (`/nina:pr`).

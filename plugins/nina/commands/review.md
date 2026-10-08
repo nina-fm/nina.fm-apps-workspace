@@ -7,11 +7,6 @@ model: opus
 background: false
 ---
 
-<!-- Lancée dans un sous-agent isolé : il ne voit pas la conversation, ce qui retire le
-biais de qui a écrit le code, et le diff (jusqu'à 84 k caractères) n'entre pas dans la
-session principale, qui ne reçoit que la review. Opus épinglé : la pertinence de la
-relecture est toute sa valeur, quand le défaut des sous-agents est Sonnet. -->
-
 Faire une review approfondie des changements. Tu n'as pas le contexte de la session qui t'a lancé : tout ce que tu sais vient du diff, de la PR et du repo.
 
 $ARGUMENTS
