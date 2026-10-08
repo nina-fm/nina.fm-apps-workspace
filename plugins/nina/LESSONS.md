@@ -58,3 +58,9 @@ repos. À lire avant de toucher aux hooks, aux commandes ou à `bin/`.
   pas celui des commits relus. mixtaper#16 supprimait `src/types/api/`, que plus rien ne
   déclare — d'où −63 % au lieu des −89 % attendus. Choisir pour la recette une PR sur la
   disposition du jour, ou rejouer la régénération sur `main`.
+- Le workflow intégré « Auto-add sub-issues to project » copie chaque sous-issue dans
+  **tous** les Projects où se trouve son epic, une seconde après le rattachement et sans
+  Horizon. Le 2026-10-08, l'epic #63, rangée dans « Mixtaper » par une session encore sur
+  un plugin d'avant #69, y a entraîné ses huit sous-issues. Seul le rangement de l'epic
+  est à surveiller, et un plugin à jour dans **chaque** repo (`installed_plugins.json`
+  pin une version par repo) : retirer l'epic du Project fautif arrête la propagation.
