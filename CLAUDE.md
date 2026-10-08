@@ -1,10 +1,7 @@
 # CLAUDE.md — nina.fm-apps-workspace
 
-Guidelines transversales pour tous les repos du workspace Nina.fm.
-
-> Chaque repo a son propre CLAUDE.md pour les conventions stack-spécifiques.
-> Voir `WORKSPACE.md` pour l'infrastructure, l'écosystème, le plugin `nina` et les
-> conventions cross-repo.
+Conventions communes aux cinq repos ; celles d'une stack sont dans le `CLAUDE.md` du repo.
+Infrastructure, écosystème et plugin `nina` : `WORKSPACE.md`.
 
 ## Langue
 
@@ -51,9 +48,7 @@ l'affiche en début de session quand le repo a le sien (`NINA_PROJECT` dans son
 - **Un chantier transverse est une epic du workspace** ; un chantier à deux repos que pilote
   une app reste son epic à elle (mixtaper#46 porte des sous-issues `api`). Les sous-issues
   vivent dans le repo du code qu'elles modifient et se rangent dans le **seul** Project de leur
-  epic : un second rangement, ce sont deux Horizons qui divergent sans que rien ne le signale —
-  le 2026-09-22, une sous-issue de l'epic apps-workspace#46 était « Maintenant » dans le
-  Project du workspace et « Au fil de l'eau » dans celui de faceb.
+  epic : un second rangement, ce sont deux Horizons qui divergent en silence.
 - **Toute issue ouverte se range dans un Project**, `plan.sh add <url> <Horizon>` : celui de
   l'epic dont elle est une sous-issue, sinon celui de son repo. `plan.sh` trouve seul celui
   d'une sous-issue ou d'une issue déjà rangée, quelle que soit la session ; le premier rangement
@@ -92,8 +87,7 @@ retours → merge
   `npx changeset status` : un changeset déjà publié survit à ce merge et rejouerait son
   entrée de changelog
 - **Vérifier un run CI** : épingler l'identifiant (`gh run view <id>`) — `gh run list --limit 1`
-  peut renvoyer un run antérieur tant que le nouveau n'est pas créé, et on rapporte alors
-  un succès qui n'a rien à voir avec son push
+  peut renvoyer un run antérieur au push
 - Le reste de la mécanique d'une PR — vérifications, changeset, upstream, corps — est dans
   `/nina:pr`, qui la porte au moment où elle sert
 
@@ -109,11 +103,6 @@ apparu. Sinon on corrige sur-le-champ : une issue n'est pas un moyen d'éviter l
 Une issue utile porte le symptôme **mesuré** (chiffres, pas impressions), la cause si elle
 est connue, les options avec leur coût, et où le défaut a été trouvé.
 
-## CI — Reusable Workflows
-
-Un step CI non-trivial qu'on retrouverait sur 2+ repos se mutualise en `workflow_call`
-partagé ; un step trivial ou très spécifique à un repo reste chez lui.
-
 ## Fichiers générés
 
 Un fichier généré ne se modifie jamais à la main : on corrige la source et on régénère
@@ -125,13 +114,21 @@ se réinclut nommément **après** la ligne qui l'exclut : la dernière qui matc
 
 ## Self-Improvement
 
-Après toute correction ou erreur détectée, consigner la leçon en une ligne concise, sans
-attendre qu'on le signale — et là où elle sert :
+Après toute correction ou erreur détectée, consigner la leçon sans attendre qu'on le
+signale, en une ligne : la règle, et l'issue où elle s'est apprise — pas son histoire.
+Avant de l'écrire :
 
-- vaut pour **toute session** → `.claude/rules/lessons.md` du repo, ou du workspace si transversal
-- ne joue qu'au moment où une **commande** tourne → son corps, dans `plugins/nina/commands/`
-- un **outil** peut l'appliquer → le script, en commentaire au-dessus du code qui l'applique
-- c'est une **convention** → `CLAUDE.md` du repo ; jamais `~/.claude/`, sauf préférence personnelle
+1. **Un outil peut-il l'appliquer** (lint, script, hook, CI) ? Alors l'outil, en commentaire
+   au-dessus du code qui l'applique. Une ligne que la machine fait respecter ne s'écrit pas.
+2. **Le moment où elle sert est-il prévisible ?** En touchant certains fichiers →
+   `.claude/rules/<sujet>.md` avec `paths:` ; pendant une commande → son corps, dans
+   `plugins/nina/commands/` ; en retouchant le plugin → `plugins/nina/LESSONS.md`.
+3. Sinon seulement, `.claude/rules/lessons.md` du repo, ou du workspace si elle vaut pour
+   les cinq. Une convention va dans `CLAUDE.md` ; `~/.claude/` ne reçoit que du personnel.
 
-`.claude/rules/` est relu à chaque requête de chaque session des cinq repos : une ligne
-qui n'y sert plus s'y paye tous les jours.
+Un agent se justifie par ses appels : une commande qui l'appelle à l'étape où il sert, ou
+une description assez nette pour qu'on le délègue. Sa description se relit à chaque
+requête ; `harnais-conso.sh` liste ceux que rien n'appelle, et `/nina:harnais` les trie.
+
+Ce qui se charge sans condition se paye à chaque requête des cinq repos. `/nina:harnais`
+le mesure contre le budget d'instructions et fait le tri : à lancer quand il le dépasse.

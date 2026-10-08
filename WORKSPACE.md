@@ -178,8 +178,9 @@ Contenu actuel :
   - `plan.sh list` liste Maintenant, Ensuite et Plus tard en une ligne par issue, pour `/nina:plan`.
 
   Le parent d'une issue n'est pas dans `gh project item-list` : il se lit par `gh api …/parent` et `…/sub_issues`, ou par GraphQL. Une session garde le `NINA_PROJECT` du repo où elle a été lancée, même dans un sous-repo : depuis le workspace, une issue Mixtaper sans epic encore rangée nulle part se range avec `NINA_PROJECT=1 plan.sh add …`. Une sous-issue ou une issue déjà rangée n'a pas besoin du préfixe, ni même de `NINA_PROJECT` : depuis `api` ou `auth`, une sous-issue se démarre dans le Project de son epic, et le `move` d'une epic depuis une autre session reste dans le sien.
+- **Alerte harnais** : un second hook `SessionStart` lance `bin/harnais.sh --alerte`, muet tant que les instructions chargées à chaque session tiennent dans le budget (18 000 caractères) ; au-delà, une ligne invite à lancer `/nina:harnais`. Il ne dépend pas de `NINA_PROJECT` et sort toujours en 0.
 - **Agent `nina:api-explorer`** (`agents/`) : contexte de `nina.fm-api` pour les apps — endpoints, format de réponse, auth. Il lit le code de l'API dans le repo frère `../nina.fm-api/` ; depuis une app, ce dossier est hors du projet, et ses lectures sont refusées tant que l'app ne l'ouvre pas (voir « Accès à l'API » ci-dessous).
-- **Commandes communes** : `/nina:epic`, `/nina:task`, `/nina:pr`, `/nina:review`, `/nina:plan` (`commands/`, voir « Commandes Disponibles »). Tronc commun à tous les repos : elles passent par `gh`, et déduisent ce qui se déduit — le repo (`gh repo view`, `{owner}/{repo}` dans `gh api`), la branche par défaut, le nom du package et les scripts de vérification (`package.json`), l'usage de Changesets (`.changeset/config.json`). Ce qui est propre à une stack vient de la checklist du repo.
+- **Commandes communes** : `/nina:epic`, `/nina:task`, `/nina:pr`, `/nina:review`, `/nina:plan`, `/nina:harnais` (`commands/`, voir « Commandes Disponibles »). Tronc commun à tous les repos : elles passent par `gh`, et déduisent ce qui se déduit — le repo (`gh repo view`, `{owner}/{repo}` dans `gh api`), la branche par défaut, le nom du package et les scripts de vérification (`package.json`), l'usage de Changesets (`.changeset/config.json`). Ce qui est propre à une stack vient de la checklist du repo.
 
 **Checklists du repo** : `.claude/checklists/review.md` et `.claude/checklists/task.md`, à la racine du repo (`git rev-parse --show-toplevel`). Chacune est facultative : la commande la lit si elle existe et s'en passe sinon. Elles sont hors de `.claude/rules/`, qui se charge à chaque session, car elles ne servent qu'à la commande.
 
@@ -241,6 +242,8 @@ La mise à jour ne vaut que pour le repo où on la lance, et prend effet à la s
 claude --plugin-dir plugins/nina                                  # charge le plugin local
 bash plugins/nina/hooks/guard-env.test.sh                         # test de la garde .env
 bash plugins/nina/bin/plan.test.sh                                # test de plan.sh (gh simulé)
+bash plugins/nina/bin/harnais.test.sh                             # test de harnais.sh (HOME simulé)
+bash plugins/nina/bin/harnais-conso.test.sh                       # test de harnais-conso.sh (transcripts de fixture)
 claude plugin validate . && claude plugin validate plugins/nina   # structure
 ```
 
@@ -268,11 +271,11 @@ Les cinq repos de code sont clonés **dans** le workspace par `setup.sh`, et ign
 │       ├── .claude-plugin/plugin.json
 │       ├── LESSONS.md                 ← Pièges du chantier du plugin
 │       ├── agents/                    ← api-explorer (nina:api-explorer)
-│       ├── bin/                       ← plan.sh, review-diff.sh et leurs tests (dans le PATH des sessions)
-│       ├── commands/                  ← /nina:epic, /nina:task, /nina:pr, /nina:review, /nina:plan
+│       ├── bin/                       ← plan.sh, review-diff.sh, harnais.sh, harnais-conso.sh et leurs tests (dans le PATH des sessions)
+│       ├── commands/                  ← /nina:epic, /nina:task, /nina:pr, /nina:review, /nina:plan, /nina:harnais
 │       └── hooks/                     ← hooks.json, garde .env et son test
 └── .claude/
-    ├── rules/                         ← lessons.md
+    ├── rules/                         ← lessons.md ; github-actions.md et checklists.md, chargées par `paths:`
     └── settings.json                  ← Activation du plugin nina, NINA_PROJECT=2
 
 nina.fm-api/                           ← Repo NestJS (son propre git)
@@ -378,7 +381,8 @@ Servies par le plugin nina dans tout repo qui l'active :
 | `/nina:epic #N` ou `"description"` | Explore et découpe une grande fonctionnalité ; une fois le découpage approuvé, crée les sous-issues, leurs dépendances, et les range dans le Project de l'epic, à son Horizon.                                                 |
 | `/nina:pr`                         | Vérifications déduites de `package.json`, changeset si le repo utilise Changesets, push avec upstream, `gh pr create`. Signale l'epic dont la PR ferme la dernière sous-issue ouverte.                          |
 | `/nina:plan`                       | Revue du plan, au signal de `plan.sh` ou à la fermeture d'une epic : propose de monter, garder, descendre ou fermer chaque issue de Maintenant, Ensuite et Plus tard, puis applique ce qui est tranché.       |
-| `/nina:review [N]`                 | Review du diff (PR `N` ou branche courante) avec la checklist commune et `.claude/checklists/review.md` ; avec `N`, publiée par `gh pr comment`.                                                              |
+| `/nina:harnais`                    | Mesure ce que le harnais charge (`harnais.sh`) et ce que les sessions consomment (`harnais-conso.sh`, lu dans les transcripts), classe leçons, agents et étapes de commande (garder, condenser, scoper par `paths:`, agent → règle ou commande, déléguer à un sous-agent, supprimer avec preuve), fait trancher, applique et remesure. |
+| `/nina:review [N]`                 | Review du diff (PR `N` ou branche courante) avec la checklist commune et `.claude/checklists/review.md` ; avec `N`, publiée par `gh pr comment`. Tourne dans un sous-agent isolé en Opus (`context: fork`) : sans le biais de la session, et sans faire entrer le diff dans son contexte. |
 
 Commandes locales, dans le `.claude/commands/` de leur repo :
 
