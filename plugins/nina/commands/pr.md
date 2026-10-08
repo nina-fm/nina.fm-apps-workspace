@@ -128,7 +128,7 @@ La forme longue est voulue : rtk retire `-u`, et sans upstream `gh pr create` é
 - **Base** : `$BASE`
 - **Corps** : modèle ci-dessous, écrit dans un fichier par heredoc à guillemets simples (`<<'EOF'`) — un corps passé en argument se casse sur les apostrophes et les backticks
 
-Si la branche part d'une issue (numéro dans le nom de branche, ou issue de départ de la session), le corps commence par `Closes #N` : l'issue passe à Done dans le Project au merge. Pour une issue d'un autre repo : `Closes nina-fm/<repo>#N`.
+Si la branche part d'une issue (numéro dans le nom de branche, ou issue de départ de la session), le corps commence par `Closes #N` : l'issue passe à Done dans le Project au merge. Pour une issue d'un autre repo : `Closes nina-fm/<repo>#N`. Une issue que la PR ne solde pas n'a de mot-clé ni dans le corps ni dans **aucun message de commit** : un `Closes #N` de commit la ferme au squash, quoi que dise le corps (#55, fermée par #58) ; `Refs #N`, et la fermer à la main.
 
 ```bash
 BODY=$(mktemp)
