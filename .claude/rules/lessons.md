@@ -17,6 +17,7 @@ l'issue citée. `/nina:harnais` mesure et fait le tri.
 - `echo "$var"` interprète les `\` : un JSON passé par `echo` à `jq` casse (`Invalid escape`) ; `printf '%s' "$var"`
 - Une apostrophe dans un programme `awk` ou `jq` entre guillemets simples le ferme, **commentaires compris** (`# l'ordre`) : le script casse en `commande introuvable` loin de la cause
 - Sous `set -e`, `VAR=$(cmd)` arrête le script si `cmd` échoue : `|| true` quand ne rien trouver est permis
+- Le `sed` de macOS ne connaît pas `\|` en expression basique : il ne remplace rien, sans erreur ; `sed -E` et `(a|b)` (workspace#76)
 
 ## gh
 
