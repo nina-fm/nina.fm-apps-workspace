@@ -130,6 +130,14 @@ La séparation `build` / `deploy` en deux jobs est délibérée : tant que la Gi
 vivait dans le job de déploiement, un 500 de l'API GitHub sur les notes de release sautait
 la mise en prod alors que le tag et l'image étaient publiés (#48).
 
+Ce qui reste possible — un tag sans sa release — se détecte après coup :
+`releases-check.yml` compare chaque jour les tags `X.Y.Z` des cinq repos à leurs
+releases, et tient à jour une issue « Releases manquantes » dans ce repo, qui donne les
+commandes de rattrapage et se ferme seule une fois l'écart résorbé (#52). Il lit les repos
+privés avec le secret `RELEASES_READ_TOKEN` (PAT fine-grained, `Contents: read`), à
+renouveler à son expiration : le run échoue alors en rouge. Test :
+`bash .github/scripts/releases-manquantes.test.sh`, rejoué par `validate-workflows.yml`.
+
 Le runner est **pinné** (`runs-on: ubuntu-24.04`), pas `ubuntu-latest`, qui bascule sur
 Ubuntu 26 le 19 octobre 2026 : la montée doit être volontaire, et se teste sur une branche.
 
@@ -263,7 +271,7 @@ Les cinq repos de code sont clonés **dans** le workspace par `setup.sh`, et ign
 ├── docker-compose.dev.yml             ← Compose global (inclut api + auth)
 ├── .gitignore                         ← Ignore les repos de code
 ├── setup.sh                           ← Script d'installation sur nouvelle machine
-├── .github/workflows/                 ← Workflows réutilisables (node-validate, release, build-release, cleanup)
+├── .github/workflows/                 ← Workflows réutilisables (node-validate, release, build-release, cleanup) et contrôles planifiés
 ├── .claude-plugin/
 │   └── marketplace.json               ← Marketplace nina.fm
 ├── plugins/
