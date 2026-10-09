@@ -1,0 +1,40 @@
+name: Releases manquantes
+
+# Compare chaque jour les tags `X.Y.Z` des apps à leurs GitHub Releases, et tient à jour
+# une issue unique dans ce repo tant qu'un tag n'a pas la sienne (apps-workspace#52).
+# La logique et ses exclusions sont dans `.github/scripts/releases-manquantes.sh`.
+#
+# Secret requis : RELEASES_READ_TOKEN — PAT fine-grained, `Contents: read` sur les repos
+# de REPOS. Le GITHUB_TOKEN de ce repo ne lit pas les repos privés ; il ne sert qu'à l'issue.
+# À son expiration, le run échoue sur le premier repo illisible : le renouveler.
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Chaque jour à 6h UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Comparer tags et releases
+        env:
+          REPOS: >-
+            nina-fm/nina.fm-api
+            nina-fm/nina.fm-auth
+            nina-fm/nina.fm-faceb
+            nina-fm/nina.fm-mixtaper
+            nina-fm/nina.fm-website
+          ISSUE_REPO: ${{ github.repository }}
+          READ_TOKEN: ${{ secrets.RELEASES_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test -n "$READ_TOKEN" || { echo "::error::Secret RELEASES_READ_TOKEN absent."; exit 1; }
+          .github/scripts/releases-manquantes.sh
