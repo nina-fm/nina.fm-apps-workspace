@@ -80,7 +80,7 @@ jobs:
       - name: Contrat des workflow_call — l'appelant fautif doit échouer
         env:
           INVALID_CALLER: .github/workflow-tests/invalid-caller.yml
-          EXPECTED_ERRORS: '8'
+          EXPECTED_ERRORS: '9'
         run: |
           test -f "$INVALID_CALLER" || { echo "::error::$INVALID_CALLER est absent : le contrôle de contrat n'a plus de témoin."; exit 1; }
 
@@ -106,7 +106,8 @@ jobs:
             'input "sauter-la-ci" is not defined' \
             'secret "CODECOV_TOKENN" is not defined' \
             'secret "SSH_PRIVATE_KEY" is required' \
-            'property "image-version" is not defined'
+            'property "image-version" is not defined' \
+            'missing input "token" which is required by action'
           do
             grep -qF "$expected" /tmp/invalid-caller.log || {
               echo "::error::Catégorie non détectée : $expected"

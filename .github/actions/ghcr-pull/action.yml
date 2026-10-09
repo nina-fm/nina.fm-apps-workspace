@@ -1,0 +1,100 @@
+name: Pull ghcr.io sur le serveur
+description: Tire une image ghcr.io sur le serveur de prod sans que le jeton y reste ni n'apparaisse dans `ps`
+
+# Pourquoi pas `appleboy/ssh-action` (#76) : il envoie tout le script comme commande SSH,
+# que `sshd` lance en `$SHELL -c "<script>"`. Un jeton interpolé dans le script reste alors
+# dans l'argv du shell distant, lisible par `ps`, pendant tout le déploiement ; `envs:` n'y
+# change rien, il préfixe ce même script d'`export`. Ici, le script distant ne contient
+# aucun secret et le jeton passe par l'entrée standard de `docker login --password-stdin`.
+#
+# Côté serveur, `docker login` écrit dans un `DOCKER_CONFIG` temporaire, supprimé à la
+# sortie, échec compris : plus rien ne reste dans `~/.docker/config.json`.
+#
+# L'empreinte du serveur n'est pas vérifiée (`accept-new` dans un `known_hosts` jetable) :
+# c'est ce que fait `appleboy/ssh-action` sans `fingerprint`, comme dans les cinq repos.
+
+inputs:
+  host:
+    description: Hôte SSH du serveur
+    required: true
+  port:
+    description: Port SSH
+    required: false
+    default: '22'
+  username:
+    description: Utilisateur SSH
+    required: true
+  key:
+    description: Clé privée SSH
+    required: true
+  image:
+    description: Image à tirer, tag compris (ex. ghcr.io/nina-fm/nina.fm-api:latest)
+    required: true
+  token:
+    description: Jeton de lecture du registre, le GITHUB_TOKEN du job avec packages read
+    required: true
+  retries:
+    description: Nombre de tentatives de pull
+    required: false
+    default: '1'
+
+runs:
+  using: composite
+  steps:
+    - name: Pull de l'image sur le serveur
+      shell: bash
+      env:
+        SSH_HOST: ${{ inputs.host }}
+        SSH_PORT: ${{ inputs.port }}
+        SSH_USER: ${{ inputs.username }}
+        SSH_KEY: ${{ inputs.key }}
+        IMAGE: ${{ inputs.image }}
+        REGISTRY_TOKEN: ${{ inputs.token }}
+        RETRIES: ${{ inputs.retries }}
+        ACTOR: ${{ github.actor }}
+      run: |
+        set -euo pipefail
+        dir=$(mktemp -d)
+        trap 'rm -rf "$dir"' EXIT
+        printf '%s\n' "$SSH_KEY" > "$dir/key"
+        chmod 600 "$dir/key"
+
+        # Exécuté sur le serveur. Aucun secret dedans : il est lisible dans `ps`.
+        # Le premier contrôle précède le logout : il relève un identifiant écrit depuis le
+        # déploiement précédent (login à la main, autre workflow), sans faire échouer.
+        remote=$(cat <<'SCRIPT'
+        set -eu
+        actor=$1 image=$2 retries=$3
+        if grep -qs '"ghcr.io"' "$HOME/.docker/config.json"; then
+          echo "::warning::Un identifiant ghcr.io était stocké dans ~/.docker/config.json du serveur : purgé"
+        fi
+        docker logout ghcr.io > /dev/null 2>&1 || true
+
+        DOCKER_CONFIG=$(mktemp -d)
+        export DOCKER_CONFIG
+        trap 'rm -rf "$DOCKER_CONFIG"' EXIT
+        docker login ghcr.io -u "$actor" --password-stdin
+
+        i=1
+        until docker pull "$image"; do
+          if [ "$i" -ge "$retries" ]; then
+            echo "❌ Pull échoué après $retries tentative(s)"
+            exit 1
+          fi
+          echo "⚠️ Tentative $i/$retries échouée, nouvel essai..."
+          i=$((i + 1))
+          sleep 5
+        done
+        echo "✅ Pull réussi : $image"
+        SCRIPT
+        )
+
+        # En base64 : la commande traverse le shell de connexion du serveur, quel qu'il soit,
+        # sans souci de guillemets ni de retours à la ligne.
+        encoded=$(printf '%s' "$remote" | base64 -w0)
+        printf '%s' "$REGISTRY_TOKEN" | ssh \
+          -i "$dir/key" -p "$SSH_PORT" \
+          -o BatchMode=yes -o ConnectTimeout=30 -o ServerAliveInterval=30 \
+          -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile="$dir/known_hosts" \
+          "$SSH_USER@$SSH_HOST" \
+          "sh -c \"\$(echo $encoded | base64 -d)\" ghcr-pull '$ACTOR' '$IMAGE' '$RETRIES'"
