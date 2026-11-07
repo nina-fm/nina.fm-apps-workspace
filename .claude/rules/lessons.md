@@ -33,6 +33,10 @@ Ce qui se fait par `gh api`, sans lire de fichier, ne charge aucune règle à `p
 - Un push fait avec `GITHUB_TOKEN` ne franchit pas un check requis (l'app Actions ne peut pas être en bypass d'un ruleset) : un check obligatoire sur `main` casse les `release.yml` qui y poussent (website#65)
 - Les secrets vivent dans chaque repo : en plan Free, un repo privé ne reçoit pas les secrets d'org, même si `gh api …/organization-secrets` les liste (mixtaper#73)
 
+## Serveur
+
+Avant toute commande sur le serveur, lire `~/Sites/nina/nina.fm-infra-workspace/CLAUDE.md` : lecture seule par `ninsh`, jamais `ssh` direct ; reverse proxy et DNS vivent dans `nina.fm-webserver` (website#76).
+
 ## Chercher dans les repos
 
 Le code de faceb est dans `app/`, celui de mixtaper dans `src/` : chercher depuis la racine (`git ls-files | xargs grep`), jamais dans un dossier supposé.
