@@ -12,7 +12,7 @@ Ce repo ne contient **pas** de code applicatif — uniquement la config Claude (
 | `nina.fm-api`      | NestJS 11 + TypeORM + PostgreSQL | API partagée (auth, sessions, fichiers…) | 4000       |
 | `nina.fm-mixtaper` | SolidJS + SolidStart             | App de création de mixtapes              | 3000       |
 | `nina.fm-faceb`    | Nuxt 4                           | Backoffice admin                         | 3001       |
-| `nina.fm-website`  | Nuxt 4                           | Site public / radio                      | 3002       |
+| `nina.fm-website`  | Astro 7 + îlots Solid (statique) | Site public / radio                      | 4321       |
 | `nina.fm-auth`     | SuperTokens (Docker)             | Service d'authentification (infra seule) | 3567       |
 
 Toutes les apps partagent l'authentification SuperTokens via `nina.fm-api`.
@@ -117,6 +117,10 @@ repos d'apps en `nina-fm/nina.fm-apps-workspace/.github/workflows/<nom>.yml@main
 secrets, les ports et le healthcheck du repo. `build-release.yml` prend `version`,
 `has-release`, `no-cache`, `target`, `build-args`, `image-title` et `image-description` —
 tous évalués chez l'appelant, et donc sans secret.
+
+Le website fait exception : site statique, sans image, son `deploy.yml` enchaîne `validate` →
+`versioning` → `deploy`, où `deploy-static.yml` du repo copie le build sur le serveur, servi
+par nginx (website#80).
 
 Deux choses s'écrivent **chez l'appelant**, qu'aucune erreur de contrat ne signale :
 
@@ -317,9 +321,8 @@ nina.fm-faceb/                         ← Repo Nuxt (son propre git)
     ├── rules/                         ← forms.md (formulaires), lessons.md
     └── settings.json                  ← Activation du plugin nina, NINA_PROJECT=3
 
-nina.fm-website/                       ← Repo Nuxt (son propre git)
+nina.fm-website/                       ← Repo Astro (son propre git)
 ├── CLAUDE.md
-├── docs/archive/                      ← Guides de migration PM2 → Docker
 └── .claude/
     ├── checklists/                    ← task.md, review.md
     ├── rules/                         ← lessons.md
